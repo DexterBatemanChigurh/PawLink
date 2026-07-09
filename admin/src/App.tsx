@@ -5,6 +5,7 @@ import { Layout } from './components/layout/layout'
 import { LoginPage } from './pages/auth/login'
 import { DashboardPage } from './pages/dashboard/dashboard'
 import { UsersPage } from './pages/users/users'
+import { EditUserPage } from './pages/users/edit-user'
 import { PetsPage } from './pages/pets/pets'
 import { PetDetailPage } from './pages/pets/pet-detail'
 import { MatchesPage } from './pages/matches/matches'
@@ -49,6 +50,7 @@ function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="users" element={<UsersPage />} />
+            <Route path="users/:id/edit" element={<EditUserPage />} />
             <Route path="pets" element={<PetsPage />} />
             <Route path="pets/:id" element={<PetDetailPage />} />
             <Route path="matches" element={<MatchesPage />} />

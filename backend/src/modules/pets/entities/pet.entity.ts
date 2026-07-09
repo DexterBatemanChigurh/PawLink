@@ -118,7 +118,7 @@ export class Pet {
   @Column({ type: 'int', default: 0 })
   compatibilityScore: number;
 
-  @ManyToOne(() => User, { eager: false })
+  @ManyToOne(() => User, { eager: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'ownerId' })
   owner: User;
 

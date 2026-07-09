@@ -59,4 +59,9 @@ export class UsersService {
     });
     return { users, total };
   }
+
+  async remove(id: string): Promise<void> {
+    const user = await this.findById(id);
+    await this.usersRepository.remove(user);
+  }
 }

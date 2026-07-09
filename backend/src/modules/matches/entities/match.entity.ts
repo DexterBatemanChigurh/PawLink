@@ -32,7 +32,7 @@ export class Match {
   @Column()
   interestedUserId: string;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'interestedUserId' })
   interestedUser: User;
 

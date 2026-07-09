@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   ParseUUIDPipe,
@@ -54,5 +55,19 @@ export class UsersController {
   @ApiOperation({ summary: 'Obter usuário por ID' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findById(id);
+  }
+
+  @Patch(':id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualizar qualquer usuário (admin)' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remover usuário (admin) — cascade deleta pets, matches e timeline' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usersService.remove(id);
   }
 }
