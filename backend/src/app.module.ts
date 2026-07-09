@@ -12,6 +12,8 @@ import jwtConfig from './config/jwt.config';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PetsModule } from './modules/pets/pets.module';
+import { TimelineModule } from './modules/timeline/timeline.module';
+import { MatchesModule } from './modules/matches/matches.module';
 
 @Module({
   imports: [
@@ -57,6 +59,8 @@ import { PetsModule } from './modules/pets/pets.module';
     UsersModule,
     AuthModule,
     PetsModule,
+    TimelineModule,
+    MatchesModule,
   ],
   providers: [
     {

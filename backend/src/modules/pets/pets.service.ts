@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, ILike } from 'typeorm';
 import { Pet } from './entities/pet.entity';
@@ -67,8 +67,25 @@ export class PetsService {
     return this.petsRepository.save(pet);
   }
 
+  async updateWithOwner(id: string, data: Partial<Pet>, userId: string, userRole?: string): Promise<Pet> {
+    const pet = await this.findById(id);
+    if (pet.ownerId !== userId && userRole !== 'admin') {
+      throw new ForbiddenException('Você não é o tutor deste pet');
+    }
+    Object.assign(pet, data);
+    return this.petsRepository.save(pet);
+  }
+
   async remove(id: string): Promise<void> {
     const pet = await this.findById(id);
+    await this.petsRepository.remove(pet);
+  }
+
+  async removeWithOwner(id: string, userId: string, userRole?: string): Promise<void> {
+    const pet = await this.findById(id);
+    if (pet.ownerId !== userId && userRole !== 'admin') {
+      throw new ForbiddenException('Você não é o tutor deste pet');
+    }
     await this.petsRepository.remove(pet);
   }
 

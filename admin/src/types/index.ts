@@ -25,10 +25,13 @@ export interface Pet {
 
 export interface Match {
   id: string
-  userId: string
   petId: string
-  score: number
-  status: 'pending' | 'accepted' | 'rejected'
+  interestedUserId: string
+  pet: Pet
+  interestedUser: User
+  status: 'pending' | 'accepted' | 'rejected' | 'adopted'
+  message?: string
+  phone?: string
   createdAt: string
 }
 

@@ -18,7 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:admin": "ts-node src/database/seeds/seed-admin.ts"
+    "seed:admin": "ts-node src/database/seeds/seed-admin.ts",
+    "seed:demo": "ts-node src/database/seeds/seed-demo.ts",
+    "seed:matches": "ts-node src/database/seeds/seed-matches.ts"
   },
   "dependencies": {
     "@nestjs/bull": "^11.0.4",

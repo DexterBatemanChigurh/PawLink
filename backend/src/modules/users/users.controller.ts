@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   ParseUUIDPipe,
@@ -10,6 +11,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -38,6 +40,13 @@ export class UsersController {
   @ApiOperation({ summary: 'Obter perfil do usuário logado' })
   getProfile(@CurrentUser() user: User) {
     return user;
+  }
+
+  @Patch('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualizar perfil do usuário logado' })
+  updateProfile(@CurrentUser() user: User, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(user.id, dto);
   }
 
   @Get(':id')

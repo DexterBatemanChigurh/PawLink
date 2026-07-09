@@ -6,6 +6,8 @@ import { LoginPage } from './pages/auth/login'
 import { DashboardPage } from './pages/dashboard/dashboard'
 import { UsersPage } from './pages/users/users'
 import { PetsPage } from './pages/pets/pets'
+import { PetDetailPage } from './pages/pets/pet-detail'
+import { MatchesPage } from './pages/matches/matches'
 import { useEffect } from 'react'
 
 const queryClient = new QueryClient()
@@ -48,7 +50,8 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="pets" element={<PetsPage />} />
-            <Route path="matches" element={<div>Matches</div>} />
+            <Route path="pets/:id" element={<PetDetailPage />} />
+            <Route path="matches" element={<MatchesPage />} />
             <Route path="organizations" element={<div>ONGs</div>} />
             <Route path="reports" element={<div>Denúncias</div>} />
             <Route path="settings" element={<div>Configurações</div>} />

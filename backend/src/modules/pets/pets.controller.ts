@@ -2,15 +2,17 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
-  Delete,
   Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PetsService } from './pets.service';
 import { CreatePetDto } from './dto/create-pet.dto';
+import { UpdatePetDto } from './dto/update-pet.dto';
 import { Pet } from './entities/pet.entity';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -65,10 +67,21 @@ export class PetsController {
     return this.petsService.findByOwner(user.id);
   }
 
+  @Patch(':id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualizar pet' })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdatePetDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.petsService.updateWithOwner(id, dto, user.id, user.role);
+  }
+
   @Delete(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover pet' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.petsService.remove(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    return this.petsService.removeWithOwner(id, user.id, user.role);
   }
 }

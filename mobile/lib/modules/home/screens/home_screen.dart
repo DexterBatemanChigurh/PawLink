@@ -56,6 +56,16 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('PawLink'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.favorite_outline),
+            tooltip: 'Meus Pedidos',
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.myMatches),
+          ),
+          IconButton(
+            icon: const Icon(Icons.inbox_outlined),
+            tooltip: 'Solicitações Recebidas',
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.receivedMatches),
+          ),
+          IconButton(
             icon: const Icon(Icons.exit_to_app),
             onPressed: _logout,
           ),

@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import { Button } from '../../components/ui/button'
 import type { Pet } from '../../types'
 
 export function PetsPage() {
+  const navigate = useNavigate()
   const [species, setSpecies] = useState('')
 
   const { data, isLoading } = useQuery({
@@ -85,7 +87,7 @@ export function PetsPage() {
                 {pet.city && <p>📍 {pet.city}{pet.state ? `, ${pet.state}` : ''}</p>}
               </div>
               <div className="mt-3 flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">Ver</Button>
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/pets/${pet.id}`)}>Ver</Button>
                 <Button variant="ghost" size="sm">Editar</Button>
               </div>
             </div>

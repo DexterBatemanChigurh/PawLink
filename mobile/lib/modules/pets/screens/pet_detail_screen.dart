@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/network/pet_service.dart';
+import '../../../core/network/match_service.dart';
 import '../models/pet_model.dart';
+import '../../timeline/widgets/pet_timeline.dart';
 
 class PetDetailScreen extends StatefulWidget {
   final String petId;
@@ -14,6 +16,7 @@ class PetDetailScreen extends StatefulWidget {
 
 class _PetDetailScreenState extends State<PetDetailScreen> {
   final _petService = PetService();
+  final _matchService = MatchService();
   PetModel? _pet;
   bool _isLoading = true;
 
@@ -35,6 +38,78 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showInterestDialog() {
+    final messageController = TextEditingController();
+    final phoneController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Quero Adotar!'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Conte um pouco sobre você e por que deseja adotar este pet:'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: messageController,
+                decoration: const InputDecoration(
+                  labelText: 'Mensagem',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                maxLength: 500,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Telefone para contato',
+                  border: OutlineInputBorder(),
+                  hintText: '(11) 99999-9999',
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              try {
+                await _matchService.expressInterest(
+                  widget.petId,
+                  message: messageController.text,
+                  phone: phoneController.text,
+                );
+                if (ctx.mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Interesse registrado com sucesso!')),
+                  );
+                }
+              } catch (e) {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text('Erro: ${e.toString()}')),
+                  );
+                }
+              }
+            },
+            child: const Text('Enviar'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -146,7 +221,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: _showInterestDialog,
                       icon: const Icon(Icons.favorite),
                       label: const Text('Quero Adotar!', style: TextStyle(fontSize: 16)),
                     ),
@@ -154,6 +229,9 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                 ],
               ),
             ),
+          ),
+          SliverToBoxAdapter(
+            child: PetTimeline(petId: widget.petId),
           ),
         ],
       ),

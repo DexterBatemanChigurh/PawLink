@@ -23,6 +23,17 @@ class PawLinkApp extends StatelessWidget {
       themeMode: ThemeMode.light,
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.onGenerateRoute,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: MediaQuery.of(context).textScaler.clamp(
+              minScaleFactor: 0.8,
+              maxScaleFactor: 1.0,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
   }
 }
