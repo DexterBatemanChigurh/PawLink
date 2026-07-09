@@ -8,6 +8,7 @@ import { UsersPage } from './pages/users/users'
 import { EditUserPage } from './pages/users/edit-user'
 import { PetsPage } from './pages/pets/pets'
 import { PetDetailPage } from './pages/pets/pet-detail'
+import { EditPetPage } from './pages/pets/edit-pet'
 import { MatchesPage } from './pages/matches/matches'
 import { useEffect } from 'react'
 
@@ -53,6 +54,7 @@ function App() {
             <Route path="users/:id/edit" element={<EditUserPage />} />
             <Route path="pets" element={<PetsPage />} />
             <Route path="pets/:id" element={<PetDetailPage />} />
+            <Route path="pets/:id/edit" element={<EditPetPage />} />
             <Route path="matches" element={<MatchesPage />} />
             <Route path="organizations" element={<div>ONGs</div>} />
             <Route path="reports" element={<div>Denúncias</div>} />

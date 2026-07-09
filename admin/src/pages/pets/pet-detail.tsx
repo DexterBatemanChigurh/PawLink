@@ -1,5 +1,5 @@
-import { useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 import { PetTimeline } from '../../components/pets/pet-timeline'
 import { Button } from '../../components/ui/button'
@@ -7,6 +7,8 @@ import type { Pet } from '../../types'
 
 export function PetDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const { data: pet, isLoading } = useQuery<Pet>({
     queryKey: ['pet', id],
@@ -17,6 +19,16 @@ export function PetDetailPage() {
     enabled: !!id,
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/pets/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pets'] })
+      navigate('/pets')
+    },
+  })
+
   if (isLoading) return <div className="text-gray-500">Carregando...</div>
   if (!pet) return <div className="text-gray-500">Pet não encontrado</div>
 
@@ -24,7 +36,10 @@ export function PetDetailPage() {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{pet.name}</h1>
-        <Button variant="outline">Editar Pet</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(`/pets/${id}/edit`)}>Editar Pet</Button>
+          <Button variant="danger" onClick={() => { if (window.confirm(`Excluir ${pet.name}?`)) deleteMutation.mutate() }}>Excluir</Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

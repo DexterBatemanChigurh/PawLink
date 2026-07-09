@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import { Button } from '../../components/ui/button'
 import type { User } from '../../types'
 
 export function UsersPage() {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
 
   const { data, isLoading } = useQuery({
@@ -17,15 +16,6 @@ export function UsersPage() {
         params: search ? { search } : {},
       })
       return data as { users: User[]; total: number }
-    },
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      await api.delete(`/users/${userId}`)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
     },
   })
 
@@ -109,18 +99,8 @@ export function UsersPage() {
                 <td className="px-6 py-4 text-sm text-gray-600">
                   {new Date(user.createdAt).toLocaleDateString('pt-BR')}
                 </td>
-                <td className="px-6 py-4 text-right space-x-2">
+                <td className="px-6 py-4 text-right">
                   <Button variant="ghost" size="sm" onClick={() => navigate(`/users/${user.id}/edit`)}>Editar</Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => {
-                      if (window.confirm(`Excluir ${user.name}? Todos os pets, matches e timeline serão deletados.`))
-                        deleteMutation.mutate(user.id)
-                    }}
-                  >
-                    Excluir
-                  </Button>
                 </td>
               </tr>
             ))}
