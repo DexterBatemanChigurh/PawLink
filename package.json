@@ -1,0 +1,12 @@
+{
+  "name": "pawlink",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev:admin",
+    "dev:admin": "cd admin && npm run dev",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:mobile": "cd mobile && flutter run",
+    "build:admin": "cd admin && npm run build",
+    "build:backend": "cd backend && npm run build"
+  }
+}

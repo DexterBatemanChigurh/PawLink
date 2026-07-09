@@ -1,0 +1,30 @@
+# Node
+node_modules/
+dist/
+
+# Flutter
+mobile/build/
+mobile/.dart_tool/
+mobile/.packages
+mobile/.pub-cache/
+mobile/pubspec.lock
+
+# Env
+.env
+backend/.env
+mobile/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
