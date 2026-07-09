@@ -14,6 +14,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PetsModule } from './modules/pets/pets.module';
 import { TimelineModule } from './modules/timeline/timeline.module';
 import { MatchesModule } from './modules/matches/matches.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { MatchesModule } from './modules/matches/matches.module';
     PetsModule,
     TimelineModule,
     MatchesModule,
+    AdminModule,
   ],
   providers: [
     {
