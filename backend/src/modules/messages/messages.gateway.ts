@@ -14,10 +14,7 @@ import { SendMessageDto } from './dto/send-message.dto';
 
 @WebSocketGateway({
   namespace: '/messages',
-  cors: {
-    origin: '*',
-    credentials: true,
-  },
+  cors: { origin: '*', credentials: true },
 })
 export class MessagesGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -46,7 +43,15 @@ export class MessagesGateway
     }
   }
 
-  handleDisconnect(_client: Socket) {}
+  handleDisconnect(client: Socket) {
+    for (const room of client.rooms) {
+      if (room.startsWith('match_')) {
+        this.server
+          .to(room)
+          .emit('user_offline', { userId: client.data.userId });
+      }
+    }
+  }
 
   @SubscribeMessage('join_match')
   handleJoinMatch(
@@ -54,6 +59,9 @@ export class MessagesGateway
     @MessageBody() payload: { matchId: string },
   ) {
     client.join(`match_${payload.matchId}`);
+    this.server
+      .to(`match_${payload.matchId}`)
+      .emit('user_online', { userId: client.data.userId });
   }
 
   @SubscribeMessage('leave_match')
@@ -74,13 +82,11 @@ export class MessagesGateway
         client.emit('error', { message: 'Dados inválidos' });
         return;
       }
-
       const message = await this.messagesService.send(
         payload as SendMessageDto,
         client.data.userId,
       );
       const messageWithSender = await this.messagesService.findById(message.id);
-
       this.server
         .to(`match_${payload.matchId}`)
         .emit('new_message', messageWithSender);
@@ -90,5 +96,25 @@ export class MessagesGateway
           error instanceof Error ? error.message : 'Erro ao enviar mensagem',
       });
     }
+  }
+
+  @SubscribeMessage('typing')
+  handleTyping(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { matchId: string },
+  ) {
+    client
+      .to(`match_${payload.matchId}`)
+      .emit('user_typing', { userId: client.data.userId });
+  }
+
+  @SubscribeMessage('stop_typing')
+  handleStopTyping(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { matchId: string },
+  ) {
+    client
+      .to(`match_${payload.matchId}`)
+      .emit('user_stop_typing', { userId: client.data.userId });
   }
 }

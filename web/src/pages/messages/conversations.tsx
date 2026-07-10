@@ -1,11 +1,28 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
+import { getSocket } from '../../services/socket'
 import type { Conversation } from '../../types'
 import { ArrowLeft, MessageSquare } from 'lucide-react'
 
+function formatTime(dateStr: string) {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diff = now.getTime() - d.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+
+  if (days === 0) {
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  }
+  if (days === 1) return 'Ontem'
+  if (days < 7) return d.toLocaleDateString('pt-BR', { weekday: 'short' })
+  return d.toLocaleDateString('pt-BR')
+}
+
 export function ConversationsPage() {
   const navigate = useNavigate()
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
 
   const { data: conversations, isLoading } = useQuery<Conversation[]>({
     queryKey: ['conversations'],
@@ -15,6 +32,29 @@ export function ConversationsPage() {
     },
     refetchInterval: 10000,
   })
+
+  useEffect(() => {
+    const socket = getSocket()
+
+    const handleOnline = (payload: { userId: string }) => {
+      setOnlineUsers((prev) => new Set(prev).add(payload.userId))
+    }
+    const handleOffline = (payload: { userId: string }) => {
+      setOnlineUsers((prev) => {
+        const next = new Set(prev)
+        next.delete(payload.userId)
+        return next
+      })
+    }
+
+    socket.on('user_online', handleOnline)
+    socket.on('user_offline', handleOffline)
+
+    return () => {
+      socket.off('user_online', handleOnline)
+      socket.off('user_offline', handleOffline)
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -39,42 +79,50 @@ export function ConversationsPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {conversations.map((conv) => (
-              <button
-                key={conv.matchId}
-                onClick={() => navigate(`/messages/${conv.matchId}`)}
-                className="w-full bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:bg-gray-50 transition-colors text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-lg shrink-0 overflow-hidden">
-                    {conv.otherUserAvatar ? (
-                      <img src={conv.otherUserAvatar} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      conv.otherUserName.charAt(0).toUpperCase()
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
+            {conversations.map((conv) => {
+              const isOnline = onlineUsers.has(conv.otherUserId)
+              return (
+                <button
+                  key={conv.matchId}
+                  onClick={() => navigate(`/messages/${conv.matchId}`)}
+                  className="w-full p-4 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
+                >
+                  <div className="relative shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-medium text-indigo-600 overflow-hidden">
+                      {conv.otherUserAvatar ? (
+                        <img src={conv.otherUserAvatar} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        conv.otherUserName.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    {isOnline && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900 truncate">
-                        {conv.otherUserName}
-                      </h3>
-                      <span className="text-xs text-gray-400 shrink-0">
-                        {new Date(conv.lastMessageAt).toLocaleDateString('pt-BR')}
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900 truncate">
+                          {conv.otherUserName}
+                        </h3>
+                        {conv.unreadCount > 0 && (
+                          <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                            {conv.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-400 shrink-0 ml-2">
+                        {formatTime(conv.lastMessageAt)}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 truncate">
-                      {conv.petName} — {conv.lastMessage || 'Início da conversa'}
+                    <p className="text-sm text-gray-500 truncate mt-0.5">
+                      <span className="text-gray-400">{conv.petName}</span> — {conv.lastMessage || 'Início da conversa'}
                     </p>
                   </div>
-                  {conv.unreadCount > 0 && (
-                    <span className="bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shrink-0">
-                      {conv.unreadCount}
-                    </span>
-                  )}
-                </div>
-              </button>
-            ))}
+                </button>
+              )
+            })}
           </div>
         )}
       </main>
