@@ -7,6 +7,7 @@ import { LoginPage } from './pages/auth/login'
 import { DashboardPage } from './pages/dashboard/dashboard'
 import { UsersPage } from './pages/users/users'
 import { EditUserPage } from './pages/users/edit-user'
+import { NewUserPage } from './pages/users/new-user'
 import { PetsPage } from './pages/pets/pets'
 import { PetDetailPage } from './pages/pets/pet-detail'
 import { EditPetPage } from './pages/pets/edit-pet'
@@ -57,6 +58,7 @@ function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="users" element={<UsersPage />} />
+            <Route path="users/new" element={<NewUserPage />} />
             <Route path="users/:id/edit" element={<EditUserPage />} />
             <Route path="pets" element={<PetsPage />} />
             <Route path="pets/:id" element={<PetDetailPage />} />

@@ -42,7 +42,7 @@ export function UsersPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Usuários</h1>
-        <Button variant="success">Novo Usuário</Button>
+        <Button variant="success" onClick={() => navigate('/users/new')}>Novo Usuário</Button>
       </div>
 
       <div className="mb-4">
