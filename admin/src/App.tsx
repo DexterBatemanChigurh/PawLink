@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useAuthStore } from './store/auth.store'
+import { useThemeStore } from './store/theme.store'
 import { Layout } from './components/layout/layout'
 import { LoginPage } from './pages/auth/login'
 import { DashboardPage } from './pages/dashboard/dashboard'
@@ -18,7 +19,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore()
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>
+    return <div className="min-h-screen flex items-center justify-center dark:text-gray-300">Carregando...</div>
   }
 
   if (!isAuthenticated) {
@@ -30,10 +31,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const { checkAuth } = useAuthStore()
+  const { isDark } = useThemeStore()
 
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark)
+  }, [isDark])
 
   return (
     <QueryClientProvider client={queryClient}>

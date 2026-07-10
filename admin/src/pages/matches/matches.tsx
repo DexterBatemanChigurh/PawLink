@@ -32,10 +32,10 @@ export function MatchesPage() {
   }) ?? []
 
   const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-700',
-    accepted: 'bg-green-100 text-green-700',
-    rejected: 'bg-red-100 text-red-700',
-    adopted: 'bg-blue-100 text-blue-700',
+    pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400',
+    accepted: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400',
+    rejected: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400',
+    adopted: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400',
   }
 
   const statusLabels: Record<string, string> = {
@@ -48,7 +48,7 @@ export function MatchesPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Solicitações de Adoção</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Solicitações de Adoção</h1>
       </div>
 
       <div className="mb-4 flex gap-2">
@@ -64,8 +64,8 @@ export function MatchesPage() {
             onClick={() => setFilter(f.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filter === f.key
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
             }`}
           >
             {f.label}
@@ -73,64 +73,65 @@ export function MatchesPage() {
         ))}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden">
         {isLoading ? (
-          <div className="text-center py-12 text-gray-500">Carregando...</div>
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">Carregando...</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">Nenhuma solicitação encontrada</div>
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">Nenhuma solicitação encontrada</div>
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">Interessado</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">Pet</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">Mensagem</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">Contato</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">Status</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">Data</th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-gray-500">Ações</th>
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Interessado</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Pet</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Mensagem</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Contato</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Data</th>
+                <th className="text-right px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400">Ações</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((match) => (
-                <tr key={match.id} className="border-b border-gray-50 hover:bg-gray-50">
+                <tr key={match.id} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                   <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {match.interestedUser?.name || 'Usuário'}
                     </div>
-                    <div className="text-xs text-gray-500">{match.interestedUser?.email || ''}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{match.interestedUser?.email || ''}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">{match.pet?.name || 'Pet'}</div>
-                    <div className="text-xs text-gray-500">{match.pet?.species}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{match.pet?.name || 'Pet'}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{match.pet?.species}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-700 max-w-[200px] truncate">
+                    <div className="text-sm text-gray-700 dark:text-gray-300 max-w-[200px] truncate">
                       {match.message || '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-700">{match.phone || '-'}</div>
+                    <div className="text-sm text-gray-700 dark:text-gray-300">{match.phone || '-'}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[match.status] || 'bg-gray-100 text-gray-700'}`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[match.status] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'}`}>
                       {statusLabels[match.status] || match.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                     {new Date(match.createdAt).toLocaleDateString('pt-BR')}
                   </td>
                   <td className="px-6 py-4 text-right">
                     {match.status === 'pending' && (
                       <div className="flex gap-1 justify-end">
                         <Button
+                          variant="info"
                           size="sm"
                           onClick={() => updateMutation.mutate({ id: match.id, status: 'accepted' })}
                         >
                           Aceitar
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="info"
                           size="sm"
                           onClick={() => updateMutation.mutate({ id: match.id, status: 'rejected' })}
                         >
@@ -140,6 +141,7 @@ export function MatchesPage() {
                     )}
                     {match.status === 'accepted' && (
                       <Button
+                        variant="info"
                         size="sm"
                         onClick={() => updateMutation.mutate({ id: match.id, status: 'adopted' })}
                       >
@@ -154,7 +156,7 @@ export function MatchesPage() {
         )}
       </div>
 
-      <div className="mt-4 text-sm text-gray-500">
+      <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
         Total: {matches?.length ?? 0} solicitações
       </div>
     </div>

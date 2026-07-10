@@ -30,18 +30,18 @@ export function PetsPage() {
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
-      available: 'bg-green-100 text-green-700',
-      adopted: 'bg-blue-100 text-blue-700',
-      in_treatment: 'bg-yellow-100 text-yellow-700',
+      available: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400',
+      adopted: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400',
+      in_treatment: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400',
     }
-    return colors[status] || 'bg-gray-100 text-gray-700'
+    return colors[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Pets</h1>
-        <Button>Cadastrar Pet</Button>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Pets</h1>
+        <Button variant="success">Cadastrar Pet</Button>
       </div>
 
       <div className="mb-4 flex gap-2">
@@ -51,8 +51,8 @@ export function PetsPage() {
             onClick={() => setSpecies(s)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               species === s
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
             }`}
           >
             {s ? `${speciesIcons[s]} ${s.charAt(0).toUpperCase() + s.slice(1)}s` : 'Todos'}
@@ -62,12 +62,12 @@ export function PetsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {isLoading && (
-          <div className="col-span-full text-center py-12 text-gray-500">Carregando...</div>
+          <div className="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">Carregando...</div>
         )}
 
         {data?.pets.map((pet) => (
-          <div key={pet.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="h-40 bg-gray-100 flex items-center justify-center text-4xl">
+          <div key={pet.id} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div className="h-40 bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-4xl">
               {pet.photos?.[0] ? (
                 <img src={pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
               ) : (
@@ -76,18 +76,18 @@ export function PetsPage() {
             </div>
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">{pet.name}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{pet.name}</h3>
                 <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(pet.status)}`}>
                   {pet.status === 'available' ? 'Disponível' : pet.status === 'adopted' ? 'Adotado' : 'Em tratamento'}
                 </span>
               </div>
-              <div className="text-sm text-gray-600 space-y-1">
+              <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                 {pet.breed && <p>{pet.breed}</p>}
                 {pet.age && <p>{pet.age} anos</p>}
                 {pet.city && <p>📍 {pet.city}{pet.state ? `, ${pet.state}` : ''}</p>}
               </div>
               <div className="mt-3 flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/pets/${pet.id}`)}>Ver</Button>
+                <Button variant="info" size="sm" className="flex-1" onClick={() => navigate(`/pets/${pet.id}`)}>Ver</Button>
                 <Button variant="ghost" size="sm" onClick={() => navigate(`/pets/${pet.id}/edit`)}>Editar</Button>
               </div>
             </div>
@@ -95,13 +95,13 @@ export function PetsPage() {
         ))}
 
         {data?.pets.length === 0 && (
-          <div className="col-span-full text-center py-12 text-gray-500">
+          <div className="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
             Nenhum pet encontrado
           </div>
         )}
       </div>
 
-      <div className="mt-4 text-sm text-gray-500">
+      <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
         Total: {data?.total ?? 0} pets
       </div>
     </div>
