@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import type { Match } from '../../types'
-import { ArrowLeft, Heart } from 'lucide-react'
+import { ArrowLeft, Heart, MessageSquare } from 'lucide-react'
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendente',
@@ -69,9 +69,20 @@ export function MyMatchesPage() {
                 {match.phone && (
                   <p className="text-sm text-gray-400">📞 {match.phone}</p>
                 )}
-                <p className="text-xs text-gray-400 mt-2">
-                  Enviado em {new Date(match.createdAt).toLocaleDateString('pt-BR')}
-                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-gray-400">
+                    Enviado em {new Date(match.createdAt).toLocaleDateString('pt-BR')}
+                  </p>
+                  {(match.status === 'accepted' || match.status === 'adopted') && (
+                    <button
+                      onClick={() => navigate(`/messages/${match.id}`)}
+                      className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Conversar
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

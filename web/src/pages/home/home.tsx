@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/auth.store'
 import api from '../../services/api'
 import type { Pet } from '../../types'
 import { PetPost } from '../../components/posts/pet-post'
-import { PawPrint, Heart, Inbox, LogOut, Plus, User, List } from 'lucide-react'
+import { PawPrint, Heart, Inbox, LogOut, Plus, User, List, MessageSquare } from 'lucide-react'
 
 const speciesList = [
   { key: '', label: 'Todos', icon: '🐾' },
@@ -99,6 +99,13 @@ export function HomePage() {
               title="Solicitações Recebidas"
             >
               <Inbox className="w-5 h-5 text-gray-600" />
+            </button>
+            <button
+              onClick={() => navigate('/conversations')}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Mensagens"
+            >
+              <MessageSquare className="w-5 h-5 text-gray-600" />
             </button>
             <button
               onClick={() => navigate('/profile')}

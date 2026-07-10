@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 import type { Match } from '../../types'
-import { ArrowLeft, Inbox } from 'lucide-react'
+import { ArrowLeft, Inbox, MessageSquare } from 'lucide-react'
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendente',
@@ -103,13 +103,22 @@ export function ReceivedMatchesPage() {
                   </div>
                 )}
                 {match.status === 'accepted' && (
-                  <button
-                    onClick={() => updateMutation.mutate({ id: match.id, status: 'adopted' })}
-                    disabled={updateMutation.isPending}
-                    className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                  >
-                    Confirmar Adoção
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updateMutation.mutate({ id: match.id, status: 'adopted' })}
+                      disabled={updateMutation.isPending}
+                      className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    >
+                      Confirmar Adoção
+                    </button>
+                    <button
+                      onClick={() => navigate(`/messages/${match.id}`)}
+                      className="flex items-center gap-1 px-4 py-1.5 border border-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Conversar
+                    </button>
+                  </div>
                 )}
               </div>
             ))}

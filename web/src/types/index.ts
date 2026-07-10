@@ -49,6 +49,29 @@ export interface TimelineEvent {
   createdAt: string
 }
 
+export interface Message {
+  id: string
+  matchId: string
+  senderId: string
+  sender: User
+  content: string
+  readAt: string | null
+  createdAt: string
+}
+
+export interface Conversation {
+  matchId: string
+  petName: string
+  petPhoto: string
+  otherUserId: string
+  otherUserName: string
+  otherUserAvatar: string
+  lastMessage: string | null
+  lastMessageAt: string
+  unreadCount: number
+  matchStatus: string
+}
+
 export interface Match {
   id: string
   petId: string

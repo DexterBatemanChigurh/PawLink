@@ -71,6 +71,41 @@ export class MatchesService {
       .getMany();
   }
 
+  async findActiveForUser(userId: string): Promise<Match[]> {
+    const asInterested = await this.matchesRepository.find({
+      where: [
+        { interestedUserId: userId, status: MatchStatus.ACCEPTED },
+        { interestedUserId: userId, status: MatchStatus.ADOPTED },
+      ],
+      relations: { pet: { owner: true } },
+      order: { updatedAt: 'DESC' },
+    });
+
+    const petIds = (await this.petsService.findByOwner(userId)).map(
+      (p) => p.id,
+    );
+    if (petIds.length === 0) return asInterested;
+
+    const asOwner = await this.matchesRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.pet', 'pet')
+      .leftJoinAndSelect('match.interestedUser', 'interestedUser')
+      .where('match.petId IN (:...petIds)', { petIds })
+      .andWhere('(match.status = :accepted OR match.status = :adopted)', {
+        accepted: MatchStatus.ACCEPTED,
+        adopted: MatchStatus.ADOPTED,
+      })
+      .orderBy('match.updatedAt', 'DESC')
+      .getMany();
+
+    const seen = new Set<string>();
+    return [...asOwner, ...asInterested].filter((m) => {
+      if (seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
+    });
+  }
+
   async findAll(): Promise<Match[]> {
     return this.matchesRepository.find({
       relations: { pet: true, interestedUser: true },

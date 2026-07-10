@@ -11,6 +11,8 @@ import { ProfilePage } from './pages/profile/profile'
 import { MyPetsPage } from './pages/pets/my-pets'
 import { NewPetPage } from './pages/pets/new-pet'
 import { EditPetPage } from './pages/pets/edit-pet'
+import { ConversationsPage } from './pages/messages/conversations'
+import { ChatPage } from './pages/messages/chat'
 import { useEffect } from 'react'
 
 const queryClient = new QueryClient()
@@ -72,6 +74,8 @@ export default function App() {
           <Route path="/my-pets" element={<ProtectedRoute><MyPetsPage /></ProtectedRoute>} />
           <Route path="/pets/new" element={<ProtectedRoute><NewPetPage /></ProtectedRoute>} />
           <Route path="/pets/:id/edit" element={<ProtectedRoute><EditPetPage /></ProtectedRoute>} />
+          <Route path="/conversations" element={<ProtectedRoute><ConversationsPage /></ProtectedRoute>} />
+          <Route path="/messages/:matchId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
