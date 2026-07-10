@@ -28,8 +28,4 @@ export function emitStopTyping(matchId: string) {
   getSocket().emit('stop_typing', { matchId })
 }
 
-export function getUserId(): string {
-  const token = localStorage.getItem('accessToken')
-  if (!token) return ''
-  return JSON.parse(atob(token.split('.')[1])).sub
-}
+

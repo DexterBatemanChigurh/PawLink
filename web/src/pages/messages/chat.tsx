@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
-import { getSocket, getUserId, emitTyping, emitStopTyping } from '../../services/socket'
+import { getSocket, emitTyping, emitStopTyping } from '../../services/socket'
+import { useAuthStore } from '../../store/auth.store'
 import type { Message as MessageType, User } from '../../types'
 import { ArrowLeft, Send, Check, CheckCheck } from 'lucide-react'
 
@@ -45,7 +46,7 @@ export function ChatPage() {
   const [typingUser, setTypingUser] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const typingTimeout = useRef<ReturnType<typeof setTimeout>>()
-  const userId = getUserId()
+  const userId = useAuthStore((s) => s.user?.id)
 
   const { data: initialMessages, isLoading } = useQuery<MessageType[]>({
     queryKey: ['messages', matchId],
