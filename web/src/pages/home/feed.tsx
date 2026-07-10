@@ -4,8 +4,7 @@ import api from '../../services/api'
 import { useAuthStore } from '../../store/auth.store'
 import type { Post, PostFeed } from '../../types'
 import { PostCard } from '../../components/posts/post-card'
-import { StoriesBar } from '../../components/feed/stories-bar'
-import { Image, X } from 'lucide-react'
+import { Image } from 'lucide-react'
 
 export function FeedPage() {
   const { user } = useAuthStore()
@@ -68,9 +67,6 @@ export function FeedPage() {
 
   return (
     <>
-      {/* Stories */}
-      <StoriesBar onCreatePost={() => { setShowCreate(true); setContent('') }} />
-
       {/* Create Post Box */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
         <div className="flex items-center gap-3">

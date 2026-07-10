@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   ParseUUIDPipe,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MatchesService } from './matches.service';
@@ -44,7 +45,8 @@ export class MatchesController {
 
   @Get('all')
   @ApiOperation({ summary: 'Todas as solicitações (admin)' })
-  findAll() {
+  findAll(@CurrentUser() user: User) {
+    if (user.role !== 'admin') throw new ForbiddenException('Apenas administradores');
     return this.matchesService.findAll();
   }
 

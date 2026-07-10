@@ -27,12 +27,6 @@ export class FeedController {
     return this.postsService.getFeed(user.id, followedIds, Number(page) || 1, Number(limit) || 10);
   }
 
-  @Get('stories')
-  @ApiOperation({ summary: 'Stories dos últimos 7 dias' })
-  async getStories() {
-    return this.postsService.getStories();
-  }
-
   @Get('suggestions')
   @ApiOperation({ summary: 'Sugestões de usuários para seguir' })
   async getSuggestions(@CurrentUser() user: User) {

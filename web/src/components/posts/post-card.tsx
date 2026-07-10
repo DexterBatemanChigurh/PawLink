@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Heart, MessageCircle, Share2, Pill, Megaphone, Calendar, Home, Stethoscope } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Megaphone, Calendar, Home, Stethoscope } from 'lucide-react'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/auth.store'
 import type { Post, ReactionCounts, ReactionType } from '../../types'

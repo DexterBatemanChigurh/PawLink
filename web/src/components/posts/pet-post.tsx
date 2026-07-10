@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Heart, MapPin, Syringe, Scissors, MessageCircle } from 'lucide-react'
+import { Heart, Syringe, Scissors, MessageCircle } from 'lucide-react'
 import type { Pet } from '../../types'
 
 interface PetPostProps {

@@ -42,34 +42,6 @@ export class PostsService {
     await this.postsRepository.remove(post);
   }
 
-  async getStories(): Promise<{ id: string; name: string; avatar: string | null; role: string }[]> {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const raw = await this.postsRepository
-      .createQueryBuilder('post')
-      .select('post.authorId', 'id')
-      .addSelect('"author"."name"', 'name')
-      .addSelect('"author"."avatar"', 'avatar')
-      .addSelect('"author"."role"', 'role')
-      .innerJoin('post.author', 'author')
-      .where('post.createdAt >= :sevenDaysAgo', { sevenDaysAgo })
-      .groupBy('post.authorId')
-      .addGroupBy('"author"."name"')
-      .addGroupBy('"author"."avatar"')
-      .addGroupBy('"author"."role"')
-      .orderBy('MAX(post.createdAt)', 'DESC')
-      .limit(12)
-      .getRawMany();
-
-    return raw.map((r: any) => ({
-      id: r.id,
-      name: r.name,
-      avatar: r.avatar,
-      role: r.role,
-    }));
-  }
-
   async getFeed(userId: string, followedIds: string[], page = 1, limit = 10): Promise<{ posts: Post[]; total: number }> {
     const publicRoles = ['ong', 'veterinary', 'petshop', 'independent_rescuer', 'admin'];
 

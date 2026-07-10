@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/auth.store'
 import type { Pet, TimelineEvent } from '../../types'
-import { Heart, Pencil, Trash2, ArrowLeft } from 'lucide-react'
+import { Heart, Pencil, Trash2 } from 'lucide-react'
 
 export function PetDetailPage() {
   const { id } = useParams<{ id: string }>()
