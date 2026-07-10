@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import { getSocket } from '../../services/socket'
 import type { Conversation } from '../../types'
-import { ArrowLeft, MessageSquare } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 
 function formatTime(dateStr: string) {
   const d = new Date(dateStr)
@@ -57,75 +57,66 @@ export function ConversationsPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="p-1.5 hover:bg-gray-100 rounded-lg">
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <h1 className="text-lg font-semibold text-gray-900">Mensagens</h1>
-        </div>
-      </header>
+    <>
+      <h1 className="text-xl font-bold text-gray-900 mb-4">Mensagens</h1>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
-        {isLoading ? (
-          <div className="text-center py-20 text-gray-400">Carregando...</div>
-        ) : !conversations?.length ? (
-          <div className="text-center py-20">
-            <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Nenhuma conversa ativa</p>
-            <p className="text-sm text-gray-400 mt-1">
-              As conversas aparecem após o match ser aceito
-            </p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
-            {conversations.map((conv) => {
-              const isOnline = onlineUsers.has(conv.otherUserId)
-              return (
-                <button
-                  key={conv.matchId}
-                  onClick={() => navigate(`/messages/${conv.matchId}`)}
-                  className="w-full p-4 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
-                >
-                  <div className="relative shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-medium text-indigo-600 overflow-hidden">
-                      {conv.otherUserAvatar ? (
-                        <img src={conv.otherUserAvatar} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        conv.otherUserName.charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    {isOnline && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
+      {isLoading ? (
+        <div className="text-center py-20 text-gray-400">Carregando...</div>
+      ) : !conversations?.length ? (
+        <div className="text-center py-20">
+          <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500">Nenhuma conversa ativa</p>
+          <p className="text-sm text-gray-400 mt-1">
+            As conversas aparecem após o match ser aceito
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-200">
+          {conversations.map((conv) => {
+            const isOnline = onlineUsers.has(conv.otherUserId)
+            return (
+              <button
+                key={conv.matchId}
+                onClick={() => navigate(`/messages/${conv.matchId}`)}
+                className="w-full p-4 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
+              >
+                <div className="relative shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center text-sm font-medium text-white overflow-hidden">
+                    {conv.otherUserAvatar ? (
+                      <img src={conv.otherUserAvatar} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      conv.otherUserName.charAt(0).toUpperCase()
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900 truncate">
-                          {conv.otherUserName}
-                        </h3>
-                        {conv.unreadCount > 0 && (
-                          <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
-                            {conv.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs text-gray-400 shrink-0 ml-2">
-                        {formatTime(conv.lastMessageAt)}
-                      </span>
+                  {isOnline && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {conv.otherUserName}
+                      </h3>
+                      {conv.unreadCount > 0 && (
+                        <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                          {conv.unreadCount}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-500 truncate mt-0.5">
-                      <span className="text-gray-400">{conv.petName}</span> — {conv.lastMessage || 'Início da conversa'}
-                    </p>
+                    <span className="text-xs text-gray-400 shrink-0 ml-2">
+                      {formatTime(conv.lastMessageAt)}
+                    </span>
                   </div>
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </main>
-    </div>
+                  <p className="text-sm text-gray-500 truncate mt-0.5">
+                    <span className="text-gray-400">{conv.petName}</span> — {conv.lastMessage || 'Início da conversa'}
+                  </p>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </>
   )
 }

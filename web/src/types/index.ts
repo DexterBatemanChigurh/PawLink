@@ -83,3 +83,48 @@ export interface Match {
   phone?: string
   createdAt: string
 }
+
+export type PostType = 'tip' | 'promotion' | 'event' | 'adoption_drive' | 'update'
+
+export interface Post {
+  id: string
+  authorId: string
+  author: User
+  content: string
+  media: string[]
+  type: PostType
+  petId?: string
+  pet?: Pet
+  createdAt: string
+}
+
+export interface PostFeed {
+  posts: Post[]
+  total: number
+}
+
+export type ReactionType = 'like' | 'love' | 'laugh' | 'wow' | 'sad' | 'angry'
+
+export interface ReactionCounts {
+  counts: Record<ReactionType, number>
+  total: number
+  userReaction: ReactionType | null
+}
+
+export interface Notification {
+  id: string
+  userId: string
+  type: 'follow' | 'reaction' | 'comment' | 'match_request' | 'match_accepted' | 'match_adopted'
+  message: string
+  referenceId: string | null
+  referenceType: string | null
+  read: boolean
+  createdAt: string
+}
+
+export interface Follow {
+  id: string
+  followerId: string
+  targetUserId: string
+  createdAt: string
+}

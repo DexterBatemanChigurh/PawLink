@@ -36,6 +36,13 @@ export class UsersController {
     return this.usersService.findAll(+page, +limit);
   }
 
+  @Get('search')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Buscar usuários por nome' })
+  search(@Query('q') q: string, @Query('page') page = 1, @Query('limit') limit = 20) {
+    return this.usersService.search(q, +page, +limit);
+  }
+
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter perfil do usuário logado' })

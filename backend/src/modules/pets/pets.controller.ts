@@ -80,8 +80,8 @@ export class PetsController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Remover pet' })
+  @ApiOperation({ summary: 'Remover pet (soft delete)' })
   remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
-    return this.petsService.removeWithOwner(id, user.id, user.role);
+    return this.petsService.softRemoveWithOwner(id, user.id, user.role);
   }
 }

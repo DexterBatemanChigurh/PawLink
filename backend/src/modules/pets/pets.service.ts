@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, ILike } from 'typeorm';
+import { Repository, FindOptionsWhere, ILike, IsNull } from 'typeorm';
 import { Pet } from './entities/pet.entity';
 import { CreatePetDto } from './dto/create-pet.dto';
 
@@ -39,7 +39,9 @@ export class PetsService {
     page?: number;
     limit?: number;
   }): Promise<{ pets: Pet[]; total: number }> {
-    const where: FindOptionsWhere<Pet> = {};
+    const where: FindOptionsWhere<Pet> = {
+      deletedAt: IsNull(),
+    };
 
     if (filters.species) where.species = filters.species as any;
     if (filters.size) where.size = filters.size as any;
@@ -81,12 +83,13 @@ export class PetsService {
     await this.petsRepository.remove(pet);
   }
 
-  async removeWithOwner(id: string, userId: string, userRole?: string): Promise<void> {
+  async softRemoveWithOwner(id: string, userId: string, userRole?: string): Promise<void> {
     const pet = await this.findById(id);
     if (pet.ownerId !== userId && userRole !== 'admin') {
       throw new ForbiddenException('Você não é o tutor deste pet');
     }
-    await this.petsRepository.remove(pet);
+    pet.deletedAt = new Date();
+    await this.petsRepository.save(pet);
   }
 
   async findByOwner(ownerId: string): Promise<Pet[]> {

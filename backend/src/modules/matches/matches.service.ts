@@ -11,6 +11,8 @@ import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { PetsService } from '../pets/pets.service';
 import { PetStatus } from '../pets/entities/pet.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 
 @Injectable()
 export class MatchesService {
@@ -18,6 +20,7 @@ export class MatchesService {
     @InjectRepository(Match)
     private matchesRepository: Repository<Match>,
     private petsService: PetsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -40,7 +43,21 @@ export class MatchesService {
       message: dto.message,
       phone: dto.phone,
     });
-    return this.matchesRepository.save(match);
+
+    const saved = await this.matchesRepository.save(match);
+
+    const pet = await this.petsService.findById(petId);
+    if (pet.ownerId !== userId) {
+      await this.notificationsService.create({
+        userId: pet.ownerId,
+        type: NotificationType.MATCH_REQUEST,
+        message: `${match.interestedUser.name} quer adotar ${pet.name}`,
+        referenceId: saved.id,
+        referenceType: 'match',
+      });
+    }
+
+    return saved;
   }
 
   async findById(id: string): Promise<Match> {
@@ -122,6 +139,22 @@ export class MatchesService {
     });
   }
 
+  async removeWithOwner(id: string, userId: string): Promise<void> {
+    const match = await this.matchesRepository.findOne({
+      where: { id },
+      relations: { pet: true, interestedUser: true },
+    });
+    if (!match) throw new NotFoundException('Match não encontrado');
+
+    const isOwner = match.pet.ownerId === userId;
+    const isInterested = match.interestedUserId === userId;
+    if (!isOwner && !isInterested) {
+      throw new ForbiddenException('Você não participa deste match');
+    }
+
+    await this.matchesRepository.remove(match);
+  }
+
   async updateStatus(
     id: string,
     userId: string,
@@ -144,10 +177,31 @@ export class MatchesService {
       await this.petsService.update(match.petId, {
         status: PetStatus.ADOPTED,
         available: false,
+        deletedAt: new Date(),
       });
     }
 
     match.status = dto.status;
-    return this.matchesRepository.save(match);
+    const saved = await this.matchesRepository.save(match);
+
+    if (dto.status === MatchStatus.ACCEPTED) {
+      await this.notificationsService.create({
+        userId: match.interestedUserId,
+        type: NotificationType.MATCH_ACCEPTED,
+        message: `Seu interesse em ${pet.name} foi aceito!`,
+        referenceId: saved.id,
+        referenceType: 'match',
+      });
+    } else if (dto.status === MatchStatus.ADOPTED) {
+      await this.notificationsService.create({
+        userId: match.interestedUserId,
+        type: NotificationType.MATCH_ADOPTED,
+        message: `Parabéns! ${pet.name} foi adotado por você!`,
+        referenceId: saved.id,
+        referenceType: 'match',
+      });
+    }
+
+    return saved;
   }
 }

@@ -16,6 +16,12 @@ import { TimelineModule } from './modules/timeline/timeline.module';
 import { MatchesModule } from './modules/matches/matches.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { MessagesModule } from './modules/messages/messages.module';
+import { FollowsModule } from './modules/follows/follows.module';
+import { PostsModule } from './modules/posts/posts.module';
+import { ReactionsModule } from './modules/reactions/reactions.module';
+import { CommentsModule } from './modules/comments/comments.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { FeedModule } from './modules/feed/feed.module';
 
 @Module({
   imports: [
@@ -65,6 +71,12 @@ import { MessagesModule } from './modules/messages/messages.module';
     MatchesModule,
     AdminModule,
     MessagesModule,
+    FollowsModule,
+    PostsModule,
+    ReactionsModule,
+    CommentsModule,
+    NotificationsModule,
+    FeedModule,
   ],
   providers: [
     {

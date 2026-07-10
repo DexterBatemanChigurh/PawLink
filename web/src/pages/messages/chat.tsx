@@ -204,8 +204,8 @@ export function ChatPage() {
         ) : (
           <div>
             {messages.map((msg, idx) => {
-              const isMine = msg.senderId === userId
-              const prev = messages[idx - 1]
+              const senderId = msg.sender?.id || msg.senderId
+              const isMine = senderId === userId
               const showDateSep = idx === 0 || !sameDay(new Date(messages[idx - 1].createdAt), new Date(msg.createdAt))
 
               return (

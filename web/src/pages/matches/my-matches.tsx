@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import type { Match } from '../../types'
-import { ArrowLeft, Heart, MessageSquare } from 'lucide-react'
+import { Heart, MessageSquare } from 'lucide-react'
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendente',
@@ -30,64 +30,55 @@ export function MyMatchesPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="p-1.5 hover:bg-gray-100 rounded-lg">
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <h1 className="text-lg font-semibold text-gray-900">Meus Pedidos</h1>
-        </div>
-      </header>
+    <>
+      <h1 className="text-xl font-bold text-gray-900 mb-4">Meus Interesses</h1>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
-        {isLoading ? (
-          <div className="text-center py-20 text-gray-400">Carregando...</div>
-        ) : !matches?.length ? (
-          <div className="text-center py-20">
-            <Heart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Você ainda não fez nenhum pedido de adoção</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {matches.map((match) => (
-              <div key={match.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{match.pet?.name || 'Pet'}</h3>
-                    <p className="text-sm text-gray-500">
-                      {match.pet?.species === 'dog' ? '🐕' : match.pet?.species === 'cat' ? '🐈' : '🐾'} {match.pet?.breed || 'SRD'}
-                    </p>
-                  </div>
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[match.status] || 'bg-gray-100'}`}>
-                    {statusLabels[match.status] || match.status}
-                  </span>
-                </div>
-                {match.message && (
-                  <p className="text-sm text-gray-600 mb-1">{match.message}</p>
-                )}
-                {match.phone && (
-                  <p className="text-sm text-gray-400">📞 {match.phone}</p>
-                )}
-                <div className="flex items-center justify-between mt-2">
-                  <p className="text-xs text-gray-400">
-                    Enviado em {new Date(match.createdAt).toLocaleDateString('pt-BR')}
+      {isLoading ? (
+        <div className="text-center py-20 text-gray-400">Carregando...</div>
+      ) : !matches?.length ? (
+        <div className="text-center py-20">
+          <Heart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500">Você ainda não fez nenhum pedido de adoção</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {matches.map((match) => (
+            <div key={match.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{match.pet?.name || 'Pet'}</h3>
+                  <p className="text-sm text-gray-500">
+                    {match.pet?.species === 'dog' ? '🐕' : match.pet?.species === 'cat' ? '🐈' : '🐾'} {match.pet?.breed || 'SRD'}
                   </p>
-                  {(match.status === 'accepted' || match.status === 'adopted') && (
-                    <button
-                      onClick={() => navigate(`/messages/${match.id}`)}
-                      className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      Conversar
-                    </button>
-                  )}
                 </div>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[match.status] || 'bg-gray-100'}`}>
+                  {statusLabels[match.status] || match.status}
+                </span>
               </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+              {match.message && (
+                <p className="text-sm text-gray-600 mb-1">{match.message}</p>
+              )}
+              {match.phone && (
+                <p className="text-sm text-gray-400">📞 {match.phone}</p>
+              )}
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-gray-400">
+                  Enviado em {new Date(match.createdAt).toLocaleDateString('pt-BR')}
+                </p>
+                {(match.status === 'accepted' || match.status === 'adopted') && (
+                  <button
+                    onClick={() => navigate(`/messages/${match.id}`)}
+                    className="flex items-center gap-1 text-xs font-medium text-[#1877F2] hover:text-[#166FE5] transition-colors"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    Conversar
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   )
 }

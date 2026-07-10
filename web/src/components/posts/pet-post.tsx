@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Heart, MapPin, Syringe, Scissors } from 'lucide-react'
+import { Heart, MapPin, Syringe, Scissors, MessageCircle } from 'lucide-react'
 import type { Pet } from '../../types'
 
 interface PetPostProps {
@@ -18,53 +18,66 @@ export function PetPost({ pet }: PetPostProps) {
   const navigate = useNavigate()
 
   return (
-    <article className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="relative bg-gray-100 flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
-        {pet.photos?.[0] ? (
-          <img src={pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-7xl opacity-40">{speciesEmoji[pet.species] || '🐾'}</span>
-        )}
+    <article className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {/* Header — like Facebook post header */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+        <div className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center overflow-hidden shrink-0">
+          {pet.owner?.avatar ? (
+            <img src={pet.owner.avatar} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-white text-sm font-semibold">
+              {pet.owner?.name?.charAt(0)?.toUpperCase() || '?'}
+            </span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">
+            {pet.owner?.name || 'Tutor'}
+          </p>
+          <p className="text-xs text-gray-500">
+            {pet.city}{pet.state ? `, ${pet.state}` : ''} · {new Date(pet.createdAt).toLocaleDateString('pt-BR')}
+          </p>
+        </div>
         {pet.status === 'available' && (
-          <span className="absolute top-3 left-3 bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+          <span className="bg-green-500 text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full shrink-0">
             Disponível
           </span>
         )}
       </div>
 
-      <div className="p-5 space-y-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">{pet.name}</h2>
-            <p className="text-sm text-gray-500">
-              {speciesLabel[pet.species] || pet.species}
-              {pet.breed ? ` · ${pet.breed}` : ' · SRD'}
-              {pet.age ? ` · ${pet.age} ${pet.age === 1 ? 'ano' : 'anos'}` : ''}
-            </p>
-          </div>
-          <span className="text-3xl">{speciesEmoji[pet.species] || '🐾'}</span>
+      {/* Photo */}
+      <div className="bg-gray-100 flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
+        {pet.photos?.[0] ? (
+          <img src={pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-7xl opacity-40">{speciesEmoji[pet.species] || '🐾'}</span>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="px-4 py-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900">{pet.name}</h2>
+          <span className="text-xs text-gray-400">
+            {speciesLabel[pet.species] || pet.species}
+            {pet.breed ? ` · ${pet.breed}` : ' · SRD'}
+            {pet.age ? ` · ${pet.age} ${pet.age === 1 ? 'ano' : 'anos'}` : ''}
+          </span>
         </div>
 
-        {(pet.city || pet.state) && (
-          <div className="flex items-center gap-1.5 text-sm text-gray-500">
-            <MapPin className="w-4 h-4" />
-            <span>{pet.city}{pet.state ? `, ${pet.state}` : ''}</span>
-          </div>
-        )}
-
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {pet.castrated && (
-            <span className="inline-flex items-center gap-1 text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1 text-[11px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded">
               <Scissors className="w-3 h-3" /> Castrado
             </span>
           )}
           {pet.vaccinated && (
-            <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-600 px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1 text-[11px] bg-green-50 text-green-600 px-2 py-0.5 rounded">
               <Syringe className="w-3 h-3" /> Vacinado
             </span>
           )}
           {pet.temperament && (
-            <span className="text-xs bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full">
+            <span className="text-[11px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded">
               {pet.temperament}
             </span>
           )}
@@ -75,24 +88,23 @@ export function PetPost({ pet }: PetPostProps) {
             {pet.story}
           </p>
         )}
+      </div>
 
-        {pet.owner?.name && (
-          <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
-            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-medium text-indigo-600">
-              {pet.owner.name.charAt(0).toUpperCase()}
-            </div>
-            <span className="text-sm text-gray-500">
-              Tutor: <span className="font-medium text-gray-700">{pet.owner.name}</span>
-            </span>
-          </div>
-        )}
-
+      {/* Actions — like Facebook */}
+      <div className="px-4 pb-3 flex gap-2">
         <button
           onClick={() => navigate(`/pets/${pet.id}`)}
-          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+          className="flex-1 bg-[#1877F2] text-white py-2 rounded-lg text-sm font-semibold hover:bg-[#166FE5] transition-colors flex items-center justify-center gap-1.5"
         >
-          <Heart className="w-5 h-5" />
-          Quero Adotar!
+          <Heart className="w-4 h-4" />
+          Quero Adotar
+        </button>
+        <button
+          onClick={() => navigate(`/pets/${pet.id}`)}
+          className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center gap-1.5"
+        >
+          <MessageCircle className="w-4 h-4" />
+          Saber Mais
         </button>
       </div>
     </article>

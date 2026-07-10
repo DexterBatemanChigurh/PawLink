@@ -128,6 +128,9 @@ export class Pet {
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
 
+  @Column({ nullable: true, type: 'timestamp' })
+  deletedAt: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

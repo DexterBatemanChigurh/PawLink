@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   ParseUUIDPipe,
@@ -61,5 +62,14 @@ export class MatchesController {
     @CurrentUser() user: User,
   ) {
     return this.matchesService.updateStatus(id, user.id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Remover match e conversa' })
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.matchesService.removeWithOwner(id, user.id);
   }
 }

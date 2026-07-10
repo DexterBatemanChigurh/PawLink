@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike, Not, In } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -58,6 +58,30 @@ export class UsersService {
       order: { createdAt: 'DESC' },
     });
     return { users, total };
+  }
+
+  async search(query: string, page = 1, limit = 20): Promise<{ users: User[]; total: number }> {
+    const [users, total] = await this.usersRepository.findAndCount({
+      where: { name: ILike(`%${query}%`) },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+    return { users, total };
+  }
+
+  async getSuggestions(currentUserId: string, followedIds: string[]): Promise<User[]> {
+    const publicRoles = ['ong', 'veterinary', 'petshop', 'independent_rescuer'];
+    const excludeIds = [currentUserId, ...followedIds];
+
+    return this.usersRepository.find({
+      where: {
+        id: Not(In(excludeIds)),
+        role: In(publicRoles),
+      },
+      order: { createdAt: 'DESC' },
+      take: 5,
+    });
   }
 
   async remove(id: string): Promise<void> {

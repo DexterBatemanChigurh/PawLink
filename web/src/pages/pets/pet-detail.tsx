@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/auth.store'
 import type { Pet, TimelineEvent } from '../../types'
-import { ArrowLeft, Heart, Pencil, Trash2 } from 'lucide-react'
+import { Heart, Pencil, Trash2, ArrowLeft } from 'lucide-react'
 
 export function PetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -74,170 +74,156 @@ export function PetDetailPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-400">Carregando...</div>
-      </div>
-    )
+    return <div className="text-gray-400 text-center py-20">Carregando...</div>
   }
 
   if (!pet) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-400">Pet não encontrado</div>
-      </div>
-    )
+    return <div className="text-gray-400 text-center py-20">Pet não encontrado</div>
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-gray-100 rounded-lg">
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <h1 className="text-lg font-semibold text-gray-900">{pet.name}</h1>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
-          <div className="h-56 bg-gray-100 flex items-center justify-center text-7xl">
-            {pet.photos?.[0] ? (
-              <img src={pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
-            ) : (
-              <span>{pet.species === 'dog' ? '🐕' : pet.species === 'cat' ? '🐈' : '🐾'}</span>
-            )}
-          </div>
-
-          <div className="p-5 space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{pet.name}</h2>
-                  <p className="text-gray-500">{pet.species === 'dog' ? 'Cachorro' : pet.species === 'cat' ? 'Gato' : pet.species}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {isOwner && (
-                    <>
-                      <button onClick={() => navigate(`/pets/${pet.id}/edit`)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
-                        <Pencil className="w-5 h-5" />
-                      </button>
-                      <button onClick={() => { if (window.confirm(`Tem certeza que deseja excluir ${pet.name}?`)) deleteMutation.mutate() }} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </>
-                  )}
-                  {pet.status === 'available' ? (
-                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">Disponível</span>
-                  ) : (
-                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">Indisponível</span>
-                  )}
-                </div>
-              </div>
-
-            <div className="flex flex-wrap gap-2">
-              <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">🐶 {pet.breed || 'SRD'}</span>
-              {pet.age && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">🎂 {pet.age} {pet.age === 1 ? 'ano' : 'anos'}</span>}
-              {pet.city && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">📍 {pet.city}{pet.state ? `, ${pet.state}` : ''}</span>}
-              {pet.castrated && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">Castrado</span>}
-              {pet.vaccinated && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">Vacinado</span>}
-            </div>
-
-            {pet.temperament && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Temperamento</h3>
-                <p className="text-gray-600 text-sm">{pet.temperament}</p>
-              </div>
-            )}
-
-            {pet.story && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">História</h3>
-                <p className="text-gray-600 text-sm">{pet.story}</p>
-              </div>
-            )}
-
-            {pet.status === 'available' && !showForm && (
-              <button
-                onClick={() => setShowForm(true)}
-                className="w-full bg-indigo-600 text-white py-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
-              >
-                <Heart className="w-5 h-5" />
-                Quero Adotar!
-              </button>
-            )}
-
-            {showForm && (
-              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-                <h3 className="font-semibold text-gray-900">Manifestar Interesse</h3>
-                {interestMutation.isError && <div className="text-red-600 text-sm">Erro ao enviar. Tente novamente.</div>}
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Conte um pouco sobre você e por que deseja adotar..."
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                  rows={3}
-                  maxLength={500}
-                />
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Telefone para contato"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowForm(false)}
-                    className="flex-1 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => interestMutation.mutate()}
-                    disabled={interestMutation.isPending}
-                    className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
-                  >
-                    {interestMutation.isPending ? 'Enviando...' : 'Enviar'}
-                  </button>
-                </div>
-                {interestMutation.isSuccess && (
-                  <div className="text-green-600 text-sm text-center">Interesse registrado com sucesso!</div>
-                )}
-              </div>
-            )}
-          </div>
+    <>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
+        <div className="relative bg-gray-100 flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
+          {pet.photos?.[0] ? (
+            <img src={pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-7xl opacity-40">{pet.species === 'dog' ? '🐕' : pet.species === 'cat' ? '🐈' : '🐾'}</span>
+          )}
+          {pet.status === 'available' && (
+            <span className="absolute top-3 left-3 bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+              Disponível
+            </span>
+          )}
         </div>
 
-        {timeline && timeline.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <h3 className="font-semibold text-gray-900 mb-4">Timeline</h3>
-            <div className="space-y-3">
-              {timeline.map((event) => (
-                <div key={event.id} className="flex gap-3">
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg ${typeColors[event.type] || 'bg-gray-100 text-gray-500'}`}>
-                    {typeIcons[event.type] || '📝'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <h4 className="font-medium text-gray-900 text-sm">{event.title}</h4>
-                      <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
-                        {new Date(event.eventDate).toLocaleDateString('pt-BR')}
-                      </span>
-                    </div>
-                    {event.description && (
-                      <p className="text-sm text-gray-600 mt-0.5">{event.description}</p>
-                    )}
-                    {event.vetName && (
-                      <p className="text-xs text-gray-400 mt-0.5">👨‍⚕️ {event.vetName}{event.clinicName ? ` - ${event.clinicName}` : ''}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+        <div className="p-5 space-y-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">{pet.name}</h2>
+              <p className="text-gray-500">{pet.species === 'dog' ? 'Cachorro' : pet.species === 'cat' ? 'Gato' : pet.species}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {isOwner && (
+                <>
+                  <button onClick={() => navigate(`/pets/${pet.id}/edit`)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                    <Pencil className="w-5 h-5" />
+                  </button>
+                  <button onClick={() => { if (window.confirm(`Tem certeza que deseja excluir ${pet.name}?`)) deleteMutation.mutate() }} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+              {pet.status === 'available' ? (
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">Disponível</span>
+              ) : (
+                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">Indisponível</span>
+              )}
             </div>
           </div>
-        )}
-      </main>
-    </div>
+
+          <div className="flex flex-wrap gap-2">
+            <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">🐶 {pet.breed || 'SRD'}</span>
+            {pet.age && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">🎂 {pet.age} {pet.age === 1 ? 'ano' : 'anos'}</span>}
+            {pet.city && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">📍 {pet.city}{pet.state ? `, ${pet.state}` : ''}</span>}
+            {pet.castrated && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">Castrado</span>}
+            {pet.vaccinated && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">Vacinado</span>}
+          </div>
+
+          {pet.temperament && (
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-1">Temperamento</h3>
+              <p className="text-gray-600 text-sm">{pet.temperament}</p>
+            </div>
+          )}
+
+          {pet.story && (
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-1">História</h3>
+              <p className="text-gray-600 text-sm">{pet.story}</p>
+            </div>
+          )}
+
+          {pet.status === 'available' && !showForm && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="w-full bg-[#1877F2] text-white py-3 rounded-lg font-medium hover:bg-[#166FE5] transition-colors flex items-center justify-center gap-2"
+            >
+              <Heart className="w-5 h-5" />
+              Quero Adotar!
+            </button>
+          )}
+
+          {showForm && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h3 className="font-semibold text-gray-900">Manifestar Interesse</h3>
+              {interestMutation.isError && <div className="text-red-600 text-sm">Erro ao enviar. Tente novamente.</div>}
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Conte um pouco sobre você e por que deseja adotar..."
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] focus:border-transparent outline-none"
+                rows={3}
+                maxLength={500}
+              />
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Telefone para contato"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] focus:border-transparent outline-none"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => interestMutation.mutate()}
+                  disabled={interestMutation.isPending}
+                  className="flex-1 bg-[#1877F2] text-white py-2 rounded-lg text-sm font-medium hover:bg-[#166FE5] disabled:opacity-50"
+                >
+                  {interestMutation.isPending ? 'Enviando...' : 'Enviar'}
+                </button>
+              </div>
+              {interestMutation.isSuccess && (
+                <div className="text-green-600 text-sm text-center">Interesse registrado com sucesso!</div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {timeline && timeline.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+          <h3 className="font-semibold text-gray-900 mb-4">Timeline</h3>
+          <div className="space-y-3">
+            {timeline.map((event) => (
+              <div key={event.id} className="flex gap-3">
+                <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg ${typeColors[event.type] || 'bg-gray-100 text-gray-500'}`}>
+                  {typeIcons[event.type] || '📝'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between">
+                    <h4 className="font-medium text-gray-900 text-sm">{event.title}</h4>
+                    <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
+                      {new Date(event.eventDate).toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+                  {event.description && (
+                    <p className="text-sm text-gray-600 mt-0.5">{event.description}</p>
+                  )}
+                  {event.vetName && (
+                    <p className="text-xs text-gray-400 mt-0.5">👨‍⚕️ {event.vetName}{event.clinicName ? ` - ${event.clinicName}` : ''}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
