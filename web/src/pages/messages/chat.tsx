@@ -7,20 +7,12 @@ import { useAuthStore } from '../../store/auth.store'
 import type { Message as MessageType, User } from '../../types'
 import { ArrowLeft, Send, Check, CheckCheck } from 'lucide-react'
 
-function sameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
-}
-
 function formatDateSeparator(date: Date) {
   const now = new Date()
-  if (sameDay(date, now)) return 'Hoje'
-  const yesterday = new Date(now)
-  yesterday.setDate(yesterday.getDate() - 1)
-  if (sameDay(date, yesterday)) return 'Ontem'
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  if (days === 0) return 'Hoje'
+  if (days === 1) return 'Ontem'
   return date.toLocaleDateString('pt-BR', {
     day: 'numeric',
     month: 'long',
@@ -33,6 +25,14 @@ function formatTime(date: Date) {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function sameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
 }
 
 export function ChatPage() {
@@ -66,7 +66,7 @@ export function ChatPage() {
   }, [initialMessages, userId])
 
   useEffect(() => {
-    if (!matchId) return
+    if (!matchId || !userId) return
 
     api.patch(`/messages/${matchId}/read`)
 
@@ -145,18 +145,13 @@ export function ChatPage() {
     typingTimeout.current = setTimeout(() => emitStopTyping(matchId), 2000)
   }
 
-  // Find date separators
-  const dateSeparators: Set<number> = new Set()
-  messages.forEach((msg, i) => {
-    if (i === 0) {
-      dateSeparators.add(i)
-      return
-    }
-    const prev = messages[i - 1]
-    if (!sameDay(new Date(msg.createdAt), new Date(prev.createdAt))) {
-      dateSeparators.add(i)
-    }
-  })
+  if (!userId) {
+    return (
+      <div className="h-screen bg-gray-100 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
@@ -171,11 +166,7 @@ export function ChatPage() {
           </button>
           <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-medium text-indigo-600 overflow-hidden shrink-0">
             {otherUser?.avatar ? (
-              <img
-                src={otherUser.avatar}
-                alt=""
-                className="w-full h-full object-cover"
-              />
+              <img src={otherUser.avatar} alt="" className="w-full h-full object-cover" />
             ) : (
               otherUser?.name?.charAt(0).toUpperCase() || '?'
             )}
@@ -211,71 +202,56 @@ export function ChatPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-0.5">
+          <div>
             {messages.map((msg, idx) => {
               const isMine = msg.senderId === userId
               const prev = messages[idx - 1]
-              const next = messages[idx + 1]
-              const isFirst = !prev || prev.senderId !== msg.senderId
-              const isLast = !next || next.senderId !== msg.senderId
-              const showDate = dateSeparators.has(idx)
+              const showDateSep = idx === 0 || !sameDay(new Date(messages[idx - 1].createdAt), new Date(msg.createdAt))
 
               return (
-                <div key={msg.id}>
-                  {showDate && (
+                <div key={msg.id} className="mb-2">
+                  {showDateSep && (
                     <div className="flex items-center justify-center my-4">
                       <span className="bg-gray-200 text-gray-500 text-[11px] font-semibold px-3 py-1 rounded-full">
                         {formatDateSeparator(new Date(msg.createdAt))}
                       </span>
                     </div>
                   )}
-                  <div
-                    className={`flex ${
-                      isMine ? 'justify-end' : 'justify-start'
-                    } ${!isLast && !isFirst ? 'my-0' : ''}`}
-                  >
-                    <div className="flex items-end gap-1.5 max-w-[70%]">
-                      {isLast && !isMine && (
-                        <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-medium text-indigo-600 overflow-hidden shrink-0 mb-0.5">
-                          {msg.sender?.avatar ? (
-                            <img
-                              src={msg.sender.avatar}
-                              alt=""
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            msg.sender?.name?.charAt(0).toUpperCase() || '?'
-                          )}
-                        </div>
+                  <div className={`flex ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`${isMine ? 'ml-12' : 'mr-12'} max-w-[70%]`}>
+                      {!isMine && (
+                        <p className="text-[11px] font-semibold text-gray-500 mb-0.5 ml-1">
+                          {msg.sender?.name || otherUser?.name || 'Usuário'}
+                        </p>
                       )}
-                      {!isLast && !isMine && <div className="w-7 shrink-0" />}
-                      <div>
-                        <div
-                          className={`px-3 py-1.5 text-sm leading-relaxed break-words ${
-                            isMine
-                              ? 'bg-blue-500 text-white rounded-2xl rounded-br-md'
-                              : 'bg-white text-gray-900 rounded-2xl rounded-bl-md shadow-sm border border-gray-200'
-                          } ${!isLast ? 'rounded-bl-md rounded-br-md' : ''}`}
-                        >
-                          <p className="whitespace-pre-wrap">{msg.content}</p>
-                        </div>
-                        {isLast && (
-                          <div
-                            className={`flex items-center gap-1 mt-0.5 ${
-                              isMine ? 'justify-end mr-1' : 'ml-1'
-                            }`}
-                          >
-                            <span className="text-[10px] text-gray-400">
-                              {formatTime(new Date(msg.createdAt))}
-                            </span>
-                            {isMine &&
-                              (msg.readAt ? (
-                                <CheckCheck className="w-3.5 h-3.5 text-blue-500" />
-                              ) : (
-                                <Check className="w-3.5 h-3.5 text-gray-400" />
-                              ))}
-                          </div>
-                        )}
+                      {isMine && (
+                        <p className="text-[11px] font-semibold text-gray-400 mb-0.5 mr-1 text-right">
+                          Você
+                        </p>
+                      )}
+                      <div
+                        className={`px-3 py-2 text-sm leading-relaxed break-words ${
+                          isMine
+                            ? 'bg-blue-500 text-white rounded-2xl rounded-br-md'
+                            : 'bg-white text-gray-900 rounded-2xl rounded-bl-md shadow-sm border border-gray-200'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+                      <div
+                        className={`flex items-center gap-1 mt-0.5 ${
+                          isMine ? 'justify-end mr-1' : 'justify-start ml-1'
+                        }`}
+                      >
+                        <span className="text-[10px] text-gray-400">
+                          {formatTime(new Date(msg.createdAt))}
+                        </span>
+                        {isMine &&
+                          (msg.readAt ? (
+                            <CheckCheck className="w-3 h-3 text-blue-500" />
+                          ) : (
+                            <Check className="w-3 h-3 text-gray-400" />
+                          ))}
                       </div>
                     </div>
                   </div>
