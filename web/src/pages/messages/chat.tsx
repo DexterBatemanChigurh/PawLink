@@ -6,6 +6,7 @@ import { getSocket, emitTyping, emitStopTyping } from '../../services/socket'
 import { useAuthStore } from '../../store/auth.store'
 import type { Message as MessageType, User } from '../../types'
 import { ArrowLeft, Send, Check, CheckCheck } from 'lucide-react'
+import { Avatar } from '../../components/ui/avatar'
 
 function formatDateSeparator(date: Date) {
   const now = new Date()
@@ -65,10 +66,13 @@ export function ChatPage() {
     }
   }, [initialMessages, userId])
 
+  const otherUserRef = useRef(otherUser)
+  otherUserRef.current = otherUser
+
   useEffect(() => {
     if (!matchId || !userId) return
 
-    api.patch(`/messages/${matchId}/read`)
+    api.patch(`/messages/${matchId}/read`).catch(() => {})
 
     const socket = getSocket()
     socket.emit('join_match', { matchId })
@@ -78,10 +82,10 @@ export function ChatPage() {
         if (prev.some((m) => m.id === message.id)) return prev
         return [...prev, message]
       })
-      if (!otherUser && message.sender) setOtherUser(message.sender)
+      if (!otherUserRef.current && message.sender) setOtherUser(message.sender)
       if (message.senderId !== userId) {
         queryClient.invalidateQueries({ queryKey: ['conversations'] })
-        api.patch(`/messages/${matchId}/read`)
+        api.patch(`/messages/${matchId}/read`).catch(() => {})
       }
     }
 
@@ -112,7 +116,7 @@ export function ChatPage() {
       socket.off('user_typing', handleTyping)
       socket.off('user_stop_typing', handleStopTyping)
     }
-  }, [matchId, queryClient, userId, otherUser])
+  }, [matchId, queryClient, userId])
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -156,21 +160,16 @@ export function ChatPage() {
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
       {/* HEADER */}
-      <header className="bg-white border-b border-gray-300 shrink-0">
+      <header className="bg-card border-b border-gray-300 shrink-0">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
           <button
             onClick={() => navigate('/conversations')}
+            aria-label="Voltar para conversas"
             className="p-1.5 hover:bg-gray-200 rounded-full"
           >
             <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-medium text-indigo-600 overflow-hidden shrink-0">
-            {otherUser?.avatar ? (
-              <img src={otherUser.avatar} alt="" className="w-full h-full object-cover" />
-            ) : (
-              otherUser?.name?.charAt(0).toUpperCase() || '?'
-            )}
-          </div>
+          <Avatar src={otherUser?.avatar} name={otherUser?.name || ''} size="sm" className="bg-indigo-100 text-indigo-600 [&>span]:text-indigo-600" />
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-semibold text-gray-900 truncate">
               {otherUser?.name || 'Carregando...'}
@@ -232,8 +231,8 @@ export function ChatPage() {
                       <div
                         className={`px-3 py-2 text-sm leading-relaxed break-words ${
                           isMine
-                            ? 'bg-blue-500 text-white rounded-2xl rounded-br-md'
-                            : 'bg-white text-gray-900 rounded-2xl rounded-bl-md shadow-sm border border-gray-200'
+                            ? 'bg-blue-500 dark:bg-blue-600 text-white rounded-2xl rounded-br-md'
+                            : 'bg-card text-gray-900 dark:text-gray-100 rounded-2xl rounded-bl-md shadow-sm border border-gray-200'
                         }`}
                       >
                         <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -276,7 +275,7 @@ export function ChatPage() {
       </main>
 
       {/* INPUT */}
-      <div className="bg-white border-t border-gray-300 shrink-0">
+      <div className="bg-card border-t border-gray-300 shrink-0">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-2">
           <input
             type="text"
@@ -284,12 +283,14 @@ export function ChatPage() {
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Digite sua mensagem..."
+            aria-label="Digite sua mensagem"
             className="flex-1 px-4 py-2.5 bg-gray-100 rounded-full text-sm outline-none focus:bg-gray-200 transition-colors"
           />
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className="p-2.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+            aria-label="Enviar mensagem"
+            className="p-2.5 bg-blue-500 dark:bg-blue-600 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
           >
             <Send className="w-4 h-4" />
           </button>

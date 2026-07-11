@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In, Not } from 'typeorm';
 import { Match, MatchStatus } from './entities/match.entity';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
@@ -28,13 +28,32 @@ export class MatchesService {
     userId: string,
     dto: CreateMatchDto,
   ): Promise<Match> {
-    await this.petsService.findById(petId);
+    const pet = await this.petsService.findById(petId);
+
+    if (pet.ownerId === userId) {
+      throw new ForbiddenException('Você não pode manifestar interesse no seu próprio pet');
+    }
 
     const existing = await this.matchesRepository.findOne({
-      where: { petId, interestedUserId: userId },
+      where: {
+        petId,
+        interestedUserId: userId,
+        status: Not(In([MatchStatus.CANCELLED, MatchStatus.REJECTED])),
+      },
     });
     if (existing) {
       throw new ConflictException('Você já manifestou interesse neste pet');
+    }
+
+    const taken = await this.matchesRepository.findOne({
+      where: [
+        { petId, status: MatchStatus.REVIEWING },
+        { petId, status: MatchStatus.ACCEPTED },
+        { petId, status: MatchStatus.ADOPTED },
+      ],
+    });
+    if (taken) {
+      throw new ConflictException('Este pet já está em processo de adoção');
     }
 
     const match = this.matchesRepository.create({
@@ -42,16 +61,23 @@ export class MatchesService {
       interestedUserId: userId,
       message: dto.message,
       phone: dto.phone,
+      experience: dto.experience,
+      hasHouse: dto.hasHouse,
+      hasOtherPets: dto.hasOtherPets,
+      motivation: dto.motivation,
     });
 
     const saved = await this.matchesRepository.save(match);
 
-    const pet = await this.petsService.findById(petId);
-    if (pet.ownerId !== userId) {
+    const reloaded = await this.matchesRepository.findOne({
+      where: { id: saved.id },
+    });
+
+    if (pet.ownerId !== userId && reloaded) {
       await this.notificationsService.create({
         userId: pet.ownerId,
         type: NotificationType.MATCH_REQUEST,
-        message: `${match.interestedUser.name} quer adotar ${pet.name}`,
+        message: `${reloaded.interestedUser?.name || 'Alguém'} quer adotar ${pet.name}`,
         referenceId: saved.id,
         referenceType: 'match',
       });
@@ -91,6 +117,7 @@ export class MatchesService {
   async findActiveForUser(userId: string): Promise<Match[]> {
     const asInterested = await this.matchesRepository.find({
       where: [
+        { interestedUserId: userId, status: MatchStatus.REVIEWING },
         { interestedUserId: userId, status: MatchStatus.ACCEPTED },
         { interestedUserId: userId, status: MatchStatus.ADOPTED },
       ],
@@ -108,7 +135,8 @@ export class MatchesService {
       .leftJoinAndSelect('match.pet', 'pet')
       .leftJoinAndSelect('match.interestedUser', 'interestedUser')
       .where('match.petId IN (:...petIds)', { petIds })
-      .andWhere('(match.status = :accepted OR match.status = :adopted)', {
+      .andWhere('(match.status = :reviewing OR match.status = :accepted OR match.status = :adopted)', {
+        reviewing: MatchStatus.REVIEWING,
         accepted: MatchStatus.ACCEPTED,
         adopted: MatchStatus.ADOPTED,
       })
@@ -168,9 +196,71 @@ export class MatchesService {
 
     const pet = await this.petsService.findById(match.petId);
     if (pet.ownerId !== userId) {
-      throw new ForbiddenException(
-        'Apenas o tutor do pet pode aceitar/rejeitar',
+      throw new ForbiddenException('Apenas o tutor do pet pode alterar status');
+    }
+
+    if (
+      dto.status === MatchStatus.ACCEPTED ||
+      dto.status === MatchStatus.ADOPTED
+    ) {
+      const existingTaken = await this.matchesRepository.findOne({
+        where: [
+          { petId: match.petId, status: MatchStatus.REVIEWING },
+          { petId: match.petId, status: MatchStatus.ACCEPTED },
+          { petId: match.petId, status: MatchStatus.ADOPTED },
+        ],
+      });
+      if (existingTaken && existingTaken.id !== id) {
+        throw new ConflictException(
+          'Este pet já está em processo de adoção por outro usuário',
+        );
+      }
+    }
+
+    if (dto.status === MatchStatus.ACCEPTED) {
+      match.status = MatchStatus.ACCEPTED;
+      await this.matchesRepository.save(match);
+
+      await this.matchesRepository.update(
+        {
+          petId: match.petId,
+          id: Not(match.id),
+          status: In([MatchStatus.PENDING, MatchStatus.REVIEWING]),
+        },
+        { status: MatchStatus.REJECTED },
       );
+
+      await this.petsService.update(match.petId, {
+        status: PetStatus.RESERVED,
+        available: false,
+      });
+
+      await this.notificationsService.create({
+        userId: match.interestedUserId,
+        type: NotificationType.MATCH_ACCEPTED,
+        message: `Seu interesse em ${pet.name} foi aceito!`,
+        referenceId: match.id,
+        referenceType: 'match',
+      });
+
+      const allMatches = await this.matchesRepository.find({
+        where: { petId: match.petId },
+      });
+
+      for (const rm of allMatches) {
+        if (rm.id === match.id) continue;
+        if (rm.status === MatchStatus.REJECTED && rm.interestedUserId !== match.interestedUserId) {
+          await this.notificationsService.create({
+            userId: rm.interestedUserId,
+            type: NotificationType.MATCH_REJECTED,
+            message: `O pet ${pet.name} foi adotado por outro candidato`,
+            referenceId: rm.id,
+            referenceType: 'match',
+          });
+        }
+      }
+
+      return this.matchesRepository.findOne({ where: { id } }) as Promise<Match>;
     }
 
     if (dto.status === MatchStatus.ADOPTED) {
@@ -179,20 +269,10 @@ export class MatchesService {
         available: false,
         deletedAt: new Date(),
       });
-    }
 
-    match.status = dto.status;
-    const saved = await this.matchesRepository.save(match);
+      match.status = MatchStatus.ADOPTED;
+      const saved = await this.matchesRepository.save(match);
 
-    if (dto.status === MatchStatus.ACCEPTED) {
-      await this.notificationsService.create({
-        userId: match.interestedUserId,
-        type: NotificationType.MATCH_ACCEPTED,
-        message: `Seu interesse em ${pet.name} foi aceito!`,
-        referenceId: saved.id,
-        referenceType: 'match',
-      });
-    } else if (dto.status === MatchStatus.ADOPTED) {
       await this.notificationsService.create({
         userId: match.interestedUserId,
         type: NotificationType.MATCH_ADOPTED,
@@ -200,8 +280,50 @@ export class MatchesService {
         referenceId: saved.id,
         referenceType: 'match',
       });
+
+      return saved;
+    }
+
+    match.status = dto.status;
+    const saved = await this.matchesRepository.save(match);
+
+    if (dto.status === MatchStatus.REVIEWING) {
+      await this.notificationsService.create({
+        userId: match.interestedUserId,
+        type: NotificationType.MATCH_REQUEST,
+        message: `Seu interesse em ${pet.name} está em análise`,
+        referenceId: saved.id,
+        referenceType: 'match',
+      });
+    } else if (dto.status === MatchStatus.REJECTED) {
+      await this.notificationsService.create({
+        userId: match.interestedUserId,
+        type: NotificationType.MATCH_REJECTED,
+        message: `Seu interesse em ${pet.name} foi recusado`,
+        referenceId: saved.id,
+        referenceType: 'match',
+      });
     }
 
     return saved;
+  }
+
+  async cancel(id: string, userId: string): Promise<void> {
+    const match = await this.matchesRepository.findOne({
+      where: { id },
+      relations: { pet: true },
+    });
+    if (!match) throw new NotFoundException('Match não encontrado');
+
+    if (match.interestedUserId !== userId) {
+      throw new ForbiddenException('Você não pode cancelar este interesse');
+    }
+
+    if (match.status !== MatchStatus.PENDING && match.status !== MatchStatus.REVIEWING) {
+      throw new ConflictException('Não é possível cancelar um interesse que já foi respondido');
+    }
+
+    match.status = MatchStatus.CANCELLED;
+    await this.matchesRepository.save(match);
   }
 }

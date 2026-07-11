@@ -78,9 +78,13 @@ export interface Match {
   interestedUserId: string
   pet: Pet
   interestedUser: User
-  status: 'pending' | 'accepted' | 'rejected' | 'adopted'
+  status: 'pending' | 'reviewing' | 'accepted' | 'rejected' | 'adopted' | 'cancelled'
   message?: string
   phone?: string
+  experience?: string
+  motivation?: string
+  hasHouse?: boolean
+  hasOtherPets?: boolean
   createdAt: string
 }
 
@@ -95,6 +99,8 @@ export interface Post {
   type: PostType
   petId?: string
   pet?: Pet
+  sharedPostId?: string
+  sharedPost?: Post
   createdAt: string
 }
 
@@ -114,7 +120,7 @@ export interface ReactionCounts {
 export interface Notification {
   id: string
   userId: string
-  type: 'follow' | 'reaction' | 'comment' | 'match_request' | 'match_accepted' | 'match_adopted'
+  type: 'follow' | 'reaction' | 'comment' | 'match_request' | 'match_accepted' | 'match_rejected' | 'match_adopted'
   message: string
   referenceId: string | null
   referenceType: string | null

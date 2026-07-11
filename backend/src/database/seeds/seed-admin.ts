@@ -11,8 +11,7 @@ async function seed() {
       email: 'admin@pawlink.com',
       password: 'admin123',
       name: 'Administrador',
-      role: 'admin' as any,
-    });
+    }, 'admin');
 
     await usersService.update(admin.id, {
       emailVerified: true,

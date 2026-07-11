@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import api from '../services/api'
+import { disconnectSocket } from '../services/socket'
 import type { User } from '../types'
 
 interface AuthState {
@@ -34,6 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
+    disconnectSocket()
     set({ user: null, isAuthenticated: false })
   },
 

@@ -12,9 +12,11 @@ import { User } from '../../users/entities/user.entity';
 
 export enum MatchStatus {
   PENDING = 'pending',
+  REVIEWING = 'reviewing',
   ACCEPTED = 'accepted',
   REJECTED = 'rejected',
   ADOPTED = 'adopted',
+  CANCELLED = 'cancelled',
 }
 
 @Entity('matches')
@@ -48,6 +50,18 @@ export class Match {
 
   @Column({ nullable: true })
   phone: string;
+
+  @Column({ nullable: true })
+  experience: string;
+
+  @Column({ default: false })
+  hasHouse: boolean;
+
+  @Column({ default: false })
+  hasOtherPets: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  motivation: string;
 
   @CreateDateColumn()
   createdAt: Date;

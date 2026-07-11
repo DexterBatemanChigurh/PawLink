@@ -8,8 +8,14 @@ import {
   Param,
   Query,
   ParseUUIDPipe,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
 import { PetsService } from './pets.service';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { UpdatePetDto } from './dto/update-pet.dto';
@@ -18,10 +24,53 @@ import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 
+const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+function imageFilter(_req: any, file: Express.Multer.File, cb: (error: Error | null, acceptFile: boolean) => void) {
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Formato não permitido. Use: jpg, png, gif, webp'), false);
+  }
+}
+
 @ApiTags('Pets')
 @Controller('pets')
 export class PetsController {
   constructor(private readonly petsService: PetsService) {}
+
+  @Post('upload-photos')
+  @ApiBearerAuth()
+  @UseInterceptors(
+    FilesInterceptor('photos', 10, {
+      storage: diskStorage({
+        destination: join(__dirname, '..', '..', '..', 'uploads', 'pets'),
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + extname(file.originalname));
+        },
+      }),
+      fileFilter: imageFilter,
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        photos: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
+  @ApiOperation({ summary: 'Upload de fotos para pets' })
+  uploadPhotos(@UploadedFiles() files: Express.Multer.File[]) {
+    if (!files || files.length === 0) throw new BadRequestException('Nenhum arquivo enviado');
+    return files.map((f) => `/uploads/pets/${f.filename}`);
+  }
 
   @Post()
   @ApiBearerAuth()
@@ -51,6 +100,26 @@ export class PetsController {
       page: Number(page) || 1,
       limit: Number(limit) || 20,
     });
+  }
+
+  @Public()
+  @Get('search')
+  @ApiOperation({ summary: 'Buscar pets por nome, espécie ou cidade' })
+  search(
+    @Query('q') q: string,
+    @Query('species') species?: string,
+    @Query('city') city?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.petsService.search(q, species, city, Number(page) || 1, Number(limit) || 20);
+  }
+
+  @Get('recommendations')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Recomendações de pets para o usuário' })
+  recommendations(@CurrentUser() user: User) {
+    return this.petsService.recommendations(user.id);
   }
 
   @Public()

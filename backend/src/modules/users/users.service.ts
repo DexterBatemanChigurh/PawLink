@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, Not, In } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from './entities/user.entity';
+import { User, UserRole, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto, role?: string): Promise<User> {
     const existing = await this.usersRepository.findOne({
       where: { email: createUserDto.email },
     });
@@ -27,6 +27,7 @@ export class UsersService {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const user = this.usersRepository.create({
       ...createUserDto,
+      role: (role ?? 'user') as UserRole,
       password: hashedPassword,
     });
 
@@ -45,29 +46,85 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { email } });
   }
 
+  async findByPasswordResetToken(token: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { passwordResetToken: token } });
+  }
+
   async update(id: string, data: Partial<User>): Promise<User> {
     const user = await this.findById(id);
     Object.assign(user, data);
     return this.usersRepository.save(user);
   }
 
-  async findAll(page = 1, limit = 20): Promise<{ users: User[]; total: number }> {
+  async updateAvatar(id: string, avatar: string): Promise<User> {
+    const user = await this.findById(id);
+    user.avatar = avatar;
+    return this.usersRepository.save(user);
+  }
+
+  async updateCoverPhoto(id: string, coverPhoto: string): Promise<User> {
+    const user = await this.findById(id);
+    user.coverPhoto = coverPhoto;
+    return this.usersRepository.save(user);
+  }
+
+  async updateSettings(
+    id: string,
+    settings: Partial<{ postVisibility: string; messagePrivacy: string; notificationPush: boolean }>,
+  ): Promise<User> {
+    const user = await this.findById(id);
+    user.settings = { ...user.settings, ...settings };
+    return this.usersRepository.save(user);
+  }
+
+  sanitizeUser(user: User): Omit<User, 'email' | 'password' | 'refreshToken' | 'passwordResetToken' | 'passwordResetExpires'> {
+    const { email, password, refreshToken, passwordResetToken, passwordResetExpires, ...rest } = user;
+    return rest;
+  }
+
+  async findAll(page = 1, limit = 20): Promise<{ users: Omit<User, 'email' | 'password' | 'refreshToken' | 'passwordResetToken' | 'passwordResetExpires'>[]; total: number }> {
     const [users, total] = await this.usersRepository.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },
     });
-    return { users, total };
+    return {
+      users: users.map((u) => this.sanitizeUser(u)),
+      total,
+    };
   }
 
-  async search(query: string, page = 1, limit = 20): Promise<{ users: User[]; total: number }> {
+  async findAllAdmin(page = 1, limit = 20, q?: string, status?: string): Promise<{ users: Omit<User, 'email' | 'password' | 'refreshToken' | 'passwordResetToken' | 'passwordResetExpires'>[]; total: number }> {
+    const where: any = {};
+    if (q) {
+      where.name = ILike(`%${q}%`);
+    }
+    if (status) {
+      where.status = status;
+    }
+    const [users, total] = await this.usersRepository.findAndCount({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+    return {
+      users: users.map((u) => this.sanitizeUser(u)),
+      total,
+    };
+  }
+
+  async search(query: string, page = 1, limit = 20): Promise<{ users: Omit<User, 'email' | 'password' | 'refreshToken' | 'passwordResetToken' | 'passwordResetExpires'>[]; total: number }> {
     const [users, total] = await this.usersRepository.findAndCount({
       where: { name: ILike(`%${query}%`) },
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },
     });
-    return { users, total };
+    return {
+      users: users.map((u) => this.sanitizeUser(u)),
+      total,
+    };
   }
 
   async getSuggestions(currentUserId: string, followedIds: string[]): Promise<User[]> {
@@ -82,6 +139,12 @@ export class UsersService {
       order: { createdAt: 'DESC' },
       take: 5,
     });
+  }
+
+  async updateStatus(id: string, status: UserStatus): Promise<User> {
+    const user = await this.findById(id);
+    user.status = status;
+    return this.usersRepository.save(user);
   }
 
   async remove(id: string): Promise<void> {

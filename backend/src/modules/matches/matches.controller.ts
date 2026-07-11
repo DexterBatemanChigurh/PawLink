@@ -14,12 +14,16 @@ import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { PetsService } from '../pets/pets.service';
 
 @ApiTags('Matches')
 @ApiBearerAuth()
 @Controller('matches')
 export class MatchesController {
-  constructor(private readonly matchesService: MatchesService) {}
+  constructor(
+    private readonly matchesService: MatchesService,
+    private readonly petsService: PetsService,
+  ) {}
 
   @Post('pets/:petId')
   @ApiOperation({ summary: 'Manifestar interesse em adotar um pet' })
@@ -52,7 +56,14 @@ export class MatchesController {
 
   @Get('pets/:petId')
   @ApiOperation({ summary: 'Solicitações de um pet específico' })
-  findByPet(@Param('petId', ParseUUIDPipe) petId: string) {
+  async findByPet(
+    @Param('petId', ParseUUIDPipe) petId: string,
+    @CurrentUser() user: User,
+  ) {
+    const pet = await this.petsService.findById(petId);
+    if (pet.ownerId !== user.id && user.role !== 'admin') {
+      throw new ForbiddenException('Apenas o tutor do pet pode ver as solicitações');
+    }
     return this.matchesService.findByPet(petId);
   }
 
@@ -64,6 +75,15 @@ export class MatchesController {
     @CurrentUser() user: User,
   ) {
     return this.matchesService.updateStatus(id, user.id, dto);
+  }
+
+  @Post(':id/cancel')
+  @ApiOperation({ summary: 'Cancelar interesse (interessado)' })
+  cancel(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.matchesService.cancel(id, user.id);
   }
 
   @Delete(':id')

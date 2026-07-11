@@ -1,9 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { User } from '../users/entities/user.entity';
 
 @Injectable()
@@ -18,11 +21,10 @@ export class AuthService {
       email: dto.email,
       password: dto.password,
       name: dto.name,
-      role: dto.role,
-    });
+    }, dto.role);
 
     const tokens = await this.generateTokens(user);
-    return { user, ...tokens };
+    return { user: this.usersService.sanitizeUser(user), ...tokens };
   }
 
   async login(dto: LoginDto) {
@@ -37,7 +39,7 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user);
-    return { user, ...tokens };
+    return { user: this.usersService.sanitizeUser(user), ...tokens };
   }
 
   async generateTokens(user: User) {
@@ -54,6 +56,40 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.usersService.findByEmail(dto.email);
+
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetExpires = new Date(Date.now() + 3600000);
+
+      await this.usersService.update(user.id, {
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetExpires,
+      });
+    }
+
+    return { message: 'Se o email existir, você receberá um link de recuperação' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const user = await this.usersService.findByPasswordResetToken(dto.token);
+
+    if (!user || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+      throw new BadRequestException('Token inválido ou expirado');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    await this.usersService.update(user.id, {
+      password: hashedPassword,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+    });
+
+    return { message: 'Senha redefinida com sucesso' };
   }
 
   async refreshToken(token: string) {

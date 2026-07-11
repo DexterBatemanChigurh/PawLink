@@ -4,6 +4,9 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import { getSocket } from '../../services/socket'
 import type { Conversation } from '../../types'
+import { Skeleton } from '../../components/ui/skeleton'
+import { EmptyState } from '../../components/ui/empty-state'
+import { Avatar } from '../../components/ui/avatar'
 import { MessageSquare } from 'lucide-react'
 
 function formatTime(dateStr: string) {
@@ -61,17 +64,13 @@ export function ConversationsPage() {
       <h1 className="text-xl font-bold text-gray-900 mb-4">Mensagens</h1>
 
       {isLoading ? (
-        <div className="text-center py-20 text-gray-400">Carregando...</div>
-      ) : !conversations?.length ? (
-        <div className="text-center py-20">
-          <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">Nenhuma conversa ativa</p>
-          <p className="text-sm text-gray-400 mt-1">
-            As conversas aparecem após o match ser aceito
-          </p>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}
         </div>
+      ) : !conversations?.length ? (
+        <EmptyState icon={MessageSquare} title="Nenhuma conversa" description="As conversas aparecem após o match ser aceito" />
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-200">
+        <div className="bg-card rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-200">
           {conversations.map((conv) => {
             const isOnline = onlineUsers.has(conv.otherUserId)
             return (
@@ -81,15 +80,9 @@ export function ConversationsPage() {
                 className="w-full p-4 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
               >
                 <div className="relative shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center text-sm font-medium text-white overflow-hidden">
-                    {conv.otherUserAvatar ? (
-                      <img src={conv.otherUserAvatar} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      conv.otherUserName.charAt(0).toUpperCase()
-                    )}
-                  </div>
+                  <Avatar src={conv.otherUserAvatar} name={conv.otherUserName} size="lg" />
                   {isOnline && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-gray-700 rounded-full" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -99,7 +92,7 @@ export function ConversationsPage() {
                         {conv.otherUserName}
                       </h3>
                       {conv.unreadCount > 0 && (
-                        <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                        <span className="bg-blue-500 dark:bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                           {conv.unreadCount}
                         </span>
                       )}

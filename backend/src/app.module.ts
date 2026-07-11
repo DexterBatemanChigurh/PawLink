@@ -22,6 +22,13 @@ import { ReactionsModule } from './modules/reactions/reactions.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { FeedModule } from './modules/feed/feed.module';
+import { UploadModule } from './modules/upload/upload.module';
+import { BlocksModule } from './modules/blocks/blocks.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { PushSubscriptionsModule } from './modules/push-subscriptions/push-subscriptions.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
+import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
+import { HashtagsModule } from './modules/hashtags/hashtags.module';
 
 @Module({
   imports: [
@@ -77,6 +84,13 @@ import { FeedModule } from './modules/feed/feed.module';
     CommentsModule,
     NotificationsModule,
     FeedModule,
+    UploadModule,
+    BlocksModule,
+    ReportsModule,
+    PushSubscriptionsModule,
+    FavoritesModule,
+    BookmarksModule,
+    HashtagsModule,
   ],
   providers: [
     {

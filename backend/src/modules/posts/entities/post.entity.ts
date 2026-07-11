@@ -50,6 +50,13 @@ export class Post {
   @JoinColumn({ name: 'petId' })
   pet: Pet;
 
+  @Column({ nullable: true })
+  sharedPostId: string;
+
+  @ManyToOne(() => Post, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'sharedPostId' })
+  sharedPost: Post;
+
   @CreateDateColumn()
   createdAt: Date;
 

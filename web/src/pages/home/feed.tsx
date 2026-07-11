@@ -2,16 +2,27 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/auth.store'
+import { useToastStore } from '../../store/toast.store'
 import type { Post, PostFeed } from '../../types'
 import { PostCard } from '../../components/posts/post-card'
-import { Image } from 'lucide-react'
+import { PostSkeleton } from '../../components/ui/skeleton'
+import { EmptyState } from '../../components/ui/empty-state'
+import { FileUpload } from '../../components/ui/file-upload'
+import { Avatar } from '../../components/ui/avatar'
+import { uploadFile } from '../../services/upload'
+import { Image, X } from 'lucide-react'
 
 export function FeedPage() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+  const toast = useToastStore()
   const [showCreate, setShowCreate] = useState(false)
   const [content, setContent] = useState('')
+  const [postMedia, setPostMedia] = useState<File | null>(null)
+  const [postPreview, setPostPreview] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploading, setUploading] = useState(false)
 
   const {
     data,
@@ -53,30 +64,46 @@ export function FeedPage() {
 
   const allPosts = data?.pages?.flatMap((p) => p.posts) ?? []
 
+  const handleFilesSelected = (files: File[]) => {
+    setPostMedia(files[0] || null)
+    if (files[0]) {
+      const reader = new FileReader()
+      reader.onload = () => setPostPreview(reader.result as string)
+      reader.readAsDataURL(files[0])
+    } else {
+      setPostPreview(null)
+    }
+  }
+
   const handleCreatePost = async () => {
     if (!content.trim()) return
     try {
-      await api.post('/posts', { content: content.trim() })
+      setUploading(true)
+      let mediaUrl: string | undefined
+      if (postMedia) {
+        mediaUrl = await uploadFile(postMedia, '/upload', setUploadProgress)
+      }
+      await api.post('/posts', { content: content.trim(), media: mediaUrl ? [mediaUrl] : undefined })
       setContent('')
       setShowCreate(false)
+      setPostMedia(null)
+      setPostPreview(null)
+      setUploadProgress(0)
       queryClient.invalidateQueries({ queryKey: ['feed'] })
+      toast.add('Post publicado com sucesso!', 'success')
     } catch {
-      alert('Erro ao criar post')
+      toast.add('Erro ao criar post', 'error')
+    } finally {
+      setUploading(false)
     }
   }
 
   return (
     <>
       {/* Create Post Box */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+      <div className="bg-card rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center overflow-hidden shrink-0">
-            {user?.avatar ? (
-              <img src={user.avatar} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-white text-sm font-semibold">{user?.name?.charAt(0)?.toUpperCase()}</span>
-            )}
-          </div>
+          <Avatar src={user?.avatar} name={user?.name || ''} size="md" />
           <button
             onClick={() => setShowCreate(true)}
             className="flex-1 h-10 bg-gray-100 rounded-full text-left px-4 text-sm text-gray-500 hover:bg-gray-200 transition-colors"
@@ -91,29 +118,46 @@ export function FeedPage() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Compartilhe algo com a comunidade..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none resize-none"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none resize-none"
               rows={4}
               maxLength={2000}
               autoFocus
             />
+            {postPreview && (
+              <div className="relative rounded-lg overflow-hidden">
+                <img loading="lazy" decoding="async" src={postPreview} alt="" className="w-full max-h-48 object-contain bg-gray-100" />
+                <button
+                  onClick={() => { setPostMedia(null); setPostPreview(null) }}
+                  aria-label="Remover imagem"
+                  className="absolute top-2 right-2 w-7 h-7 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {uploading && (
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-primary h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            )}
+            <FileUpload onFilesSelected={handleFilesSelected} maxFiles={1} />
             <div className="flex items-center justify-between">
-              <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-600 transition-colors">
-                <Image className="w-4 h-4" />
-                Foto
-              </button>
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setShowCreate(false); setContent('') }}
+                  onClick={() => { setShowCreate(false); setContent(''); setPostMedia(null); setPostPreview(null) }}
                   className="px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleCreatePost}
-                  disabled={!content.trim()}
-                  className="px-4 py-1.5 bg-[#1877F2] text-white text-sm font-semibold rounded-lg hover:bg-[#166FE5] disabled:opacity-50 transition-colors"
+                  disabled={!content.trim() || uploading}
+                  className="px-4 py-1.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
                 >
-                  Publicar
+                  {uploading ? `Enviando... ${uploadProgress}%` : 'Publicar'}
                 </button>
               </div>
             </div>
@@ -125,29 +169,16 @@ export function FeedPage() {
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden animate-pulse p-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-200" />
-                <div className="flex-1 space-y-1.5">
-                  <div className="h-4 bg-gray-200 rounded w-1/3" />
-                  <div className="h-3 bg-gray-200 rounded w-1/4" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-full" />
-                <div className="h-4 bg-gray-200 rounded w-2/3" />
-              </div>
-            </div>
+            <PostSkeleton key={i} />
           ))}
         </div>
       ) : !allPosts.length ? (
-        <div className="text-center py-20">
-          <div className="text-6xl mb-4">🐾</div>
-          <p className="text-gray-500 text-lg">Nenhum post no feed ainda</p>
-          <p className="text-gray-400 text-sm mt-1">
-            Siga perfis de ONGs e clínicas para ver conteúdo aqui
-          </p>
-        </div>
+        <EmptyState
+          icon={Image}
+          title="Nenhum post no feed ainda"
+          description="Siga perfis de ONGs e clínicas para ver conteúdo aqui"
+          action={{ label: 'Explorar pets', onClick: () => window.location.href = '/explorar' }}
+        />
       ) : (
         <div className="space-y-4">
           {allPosts.map((post) => (

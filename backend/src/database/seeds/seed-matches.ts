@@ -26,7 +26,7 @@ async function seed() {
       return;
     }
 
-    const pet = pets[0];
+    const pet = pets[0]!;
 
     const { users } = await usersService.findAll();
     const nonOwnerUsers = users.filter(u => u.id !== pet.ownerId);
@@ -46,7 +46,7 @@ async function seed() {
 
     const statuses: MatchStatus[] = [MatchStatus.PENDING, MatchStatus.ACCEPTED, MatchStatus.REJECTED];
     for (let i = 0; i < Math.min(nonOwnerUsers.length, 3); i++) {
-      const match = await matchesService.create(pet.id, nonOwnerUsers[i].id, {
+      const match = await matchesService.create(pet.id, nonOwnerUsers[i]!.id, {
         message: [
           'Olá! Tenho muito amor para dar e um quintal grande. Gostaria muito de adotar o Bolinha!',
           'Sempre quis um cachorro para fazer companhia. Moro em casa com espaço e tenho experiência com pets.',
@@ -59,7 +59,7 @@ async function seed() {
         await matchesService.updateStatus(match.id, pet.ownerId, { status: statuses[i] });
       }
 
-      console.log(`Match ${i + 1} criado: ${nonOwnerUsers[i].name} -> ${pet.name} (${statuses[i]})`);
+      console.log(`Match ${i + 1} criado: ${nonOwnerUsers[i]!.name} -> ${pet.name} (${statuses[i]})`);
     }
 
     console.log('Seed de matches concluído!');

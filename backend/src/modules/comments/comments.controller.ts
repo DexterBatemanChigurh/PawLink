@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -10,6 +11,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { UpdateCommentDto } from './dto/update-comment.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 
@@ -33,6 +35,16 @@ export class CommentsController {
   @ApiOperation({ summary: 'Comentários de um post' })
   findByPost(@Param('id', ParseUUIDPipe) id: string) {
     return this.commentsService.findByPost(id);
+  }
+
+  @Patch('comments/:id')
+  @ApiOperation({ summary: 'Editar próprio comentário' })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCommentDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.commentsService.update(id, user.id, dto);
   }
 
   @Delete('comments/:id')

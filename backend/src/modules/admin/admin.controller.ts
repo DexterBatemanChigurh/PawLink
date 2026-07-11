@@ -5,6 +5,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { User } from '../users/entities/user.entity';
 import { Pet } from '../pets/entities/pet.entity';
 import { Match, MatchStatus } from '../matches/entities/match.entity';
+import { Post } from '../posts/entities/post.entity';
+import { Report } from '../reports/entities/report.entity';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Admin')
@@ -18,6 +20,10 @@ export class AdminController {
     private petsRepository: Repository<Pet>,
     @InjectRepository(Match)
     private matchesRepository: Repository<Match>,
+    @InjectRepository(Post)
+    private postsRepository: Repository<Post>,
+    @InjectRepository(Report)
+    private reportsRepository: Repository<Report>,
   ) {}
 
   @Get('dashboard')
@@ -48,6 +54,15 @@ export class AdminController {
 
     const adoptionsCompleted = await this.matchesRepository.count({ where: { status: MatchStatus.ADOPTED } });
 
+    const [totalPosts] = await Promise.all([
+      this.postsRepository.count(),
+    ]);
+
+    const [totalReports, pendingReports] = await Promise.all([
+      this.reportsRepository.count(),
+      this.reportsRepository.count({ where: { status: 'pending' } }),
+    ]);
+
     const calcGrowth = (current: number, previous: number) =>
       previous > 0 ? Math.round(((current - previous) / previous) * 100) : current > 0 ? 100 : 0;
 
@@ -55,6 +70,9 @@ export class AdminController {
       totalUsers,
       totalPets,
       totalMatches,
+      totalPosts,
+      totalReports,
+      pendingReports,
       adoptionsCompleted,
       usersGrowth: calcGrowth(usersThisMonth, usersLastMonth),
       petsGrowth: calcGrowth(petsThisMonth, petsLastMonth),

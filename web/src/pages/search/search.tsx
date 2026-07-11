@@ -1,18 +1,28 @@
-import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
-import type { User } from '../../types'
+import type { User, Pet } from '../../types'
+import { SPECIES_EMOJI, SPECIES_LABEL } from '../../types/constants'
+import { Avatar } from '../../components/ui/avatar'
 
 export function SearchPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const query = searchParams.get('q') || ''
 
-  const { data, isLoading } = useQuery<{ users: User[]; total: number }>({
+  const { data: userData, isLoading: userLoading } = useQuery<{ users: User[]; total: number }>({
     queryKey: ['user-search', query],
     queryFn: async () => {
       const { data } = await api.get('/users/search', { params: { q: query, limit: 50 } })
+      return data
+    },
+    enabled: !!query,
+  })
+
+  const { data: pets, isLoading: petsLoading } = useQuery<Pet[]>({
+    queryKey: ['pet-search', query],
+    queryFn: async () => {
+      const { data } = await api.get('/pets/search', { params: { q: query } })
       return data
     },
     enabled: !!query,
@@ -25,38 +35,69 @@ export function SearchPage() {
         Resultados para: <strong>"{query}"</strong>
       </p>
 
-      {isLoading ? (
+      {userLoading || petsLoading ? (
         <div className="text-center py-20 text-gray-400">Buscando...</div>
-      ) : !data?.users.length ? (
-        <div className="text-center py-20">
-          <div className="text-5xl mb-4">🔍</div>
-          <p className="text-gray-500">Nenhum usuário encontrado</p>
-          <p className="text-sm text-gray-400 mt-1">Tente um nome diferente</p>
-        </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-200">
-          {data.users.map((u) => (
-            <button
-              key={u.id}
-              onClick={() => navigate(`/profile?id=${u.id}`)}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-            >
-              <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center overflow-hidden shrink-0">
-                {u.avatar ? (
-                  <img src={u.avatar} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-white text-sm font-semibold">
-                    {u.name.charAt(0).toUpperCase()}
-                  </span>
-                )}
+        <>
+          {/* User results */}
+          {userData?.users?.length ? (
+            <>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Usuários</h2>
+              <div className="bg-card rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-200 mb-6">
+                {userData.users.map((u) => (
+                  <button
+                    key={u.id}
+                    onClick={() => navigate(`/profile?id=${u.id}`)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <Avatar src={u.avatar} name={u.name} size="lg" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{u.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                    </div>
+                  </button>
+                ))}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">{u.name}</p>
-                <p className="text-xs text-gray-500 truncate">{u.email}</p>
+            </>
+          ) : null}
+
+          {/* Pet results */}
+          {pets?.length ? (
+            <>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Pets</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {pets.map((pet) => (
+                  <button
+                    key={pet.id}
+                    onClick={() => navigate(`/pets/${pet.id}`)}
+                    className="bg-card rounded-lg shadow-sm border border-gray-200 overflow-hidden text-left hover:shadow-md transition-shadow"
+                  >
+                    <div className="bg-gray-100 flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
+                      {pet.photos?.[0] ? (
+                        <img loading="lazy" decoding="async" src={pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-4xl opacity-40">{SPECIES_EMOJI[pet.species] || '🐾'}</span>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <h3 className="font-semibold text-gray-900">{pet.name}</h3>
+                      <p className="text-sm text-gray-500">{pet.breed || 'SRD'} · {SPECIES_LABEL[pet.species] || pet.species}</p>
+                      {pet.city && <p className="text-xs text-gray-400 mt-1">{pet.city}{pet.state ? `, ${pet.state}` : ''}</p>}
+                    </div>
+                  </button>
+                ))}
               </div>
-            </button>
-          ))}
-        </div>
+            </>
+          ) : null}
+
+          {!userData?.users?.length && !pets?.length && (
+            <div className="text-center py-20">
+              <div className="text-5xl mb-4">🔍</div>
+              <p className="text-gray-500">Nenhum resultado encontrado</p>
+              <p className="text-sm text-gray-400 mt-1">Tente um termo diferente</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

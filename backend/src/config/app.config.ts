@@ -8,4 +8,7 @@ export default registerAs('app', () => ({
   corsOrigin: process.env.CORS_ORIGIN || '*',
   throttleTtl: parseInt(process.env.THROTTLE_TTL || '60', 10),
   throttleLimit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
+  vapidEmail: process.env.VAPID_EMAIL || '',
 }));

@@ -1,12 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/auth.store'
-import {
-  PawPrint,
-  Home,
-  MessageCircle,
-  Search,
-  ClipboardList,
-} from 'lucide-react'
+import { Avatar } from '../ui/avatar'
+import { PawPrint, Home, MessageCircle, Search, ClipboardList } from 'lucide-react'
 
 const LINKS = [
   { path: '/', icon: Home, label: 'Feed' },
@@ -31,17 +26,12 @@ export function LeftSidebar() {
         {/* User card */}
         <div
           onClick={() => navigate('/profile')}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-200 cursor-pointer transition-colors mb-2"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/profile') }}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors mb-2"
         >
-          <div className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center overflow-hidden shrink-0">
-            {user?.avatar ? (
-              <img src={user.avatar} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-white text-sm font-semibold">
-                {user?.name?.charAt(0)?.toUpperCase()}
-              </span>
-            )}
-          </div>
+          <Avatar src={user?.avatar} name={user?.name || ''} size="md" />
           <span className="text-sm font-semibold text-gray-900 truncate">{user?.name}</span>
         </div>
 
@@ -58,11 +48,11 @@ export function LeftSidebar() {
                 onClick={() => navigate(link.path)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left ${
                   active
-                    ? 'bg-[#E7F3FF] text-[#1877F2] font-semibold'
-                    : 'text-gray-700 hover:bg-gray-200'
+                    ? 'bg-primary-light text-primary font-semibold'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
-                <link.icon className={`w-5 h-5 ${active ? 'text-[#1877F2]' : 'text-gray-500'}`} />
+                <link.icon className={`w-5 h-5 ${active ? 'text-primary' : 'text-gray-500'}`} />
                 {link.label}
               </button>
             )
@@ -75,10 +65,10 @@ export function LeftSidebar() {
           <div className="space-y-0.5">
             <button
               onClick={() => navigate('/matches/received')}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-200 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
-              <div className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center">
-                <ClipboardList className="w-3.5 h-3.5 text-yellow-600" />
+              <div className="w-5 h-5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                <ClipboardList className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400" />
               </div>
               Solicitações Recebidas
             </button>

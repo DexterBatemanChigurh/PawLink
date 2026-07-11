@@ -27,6 +27,7 @@ export enum PetSize {
 
 export enum PetStatus {
   AVAILABLE = 'available',
+  RESERVED = 'reserved',
   ADOPTED = 'adopted',
   IN_TREATMENT = 'in_treatment',
   QUARANTINED = 'quarantined',

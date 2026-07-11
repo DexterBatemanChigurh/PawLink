@@ -14,6 +14,7 @@ export enum NotificationType {
   COMMENT = 'comment',
   MATCH_REQUEST = 'match_request',
   MATCH_ACCEPTED = 'match_accepted',
+  MATCH_REJECTED = 'match_rejected',
   MATCH_ADOPTED = 'match_adopted',
 }
 

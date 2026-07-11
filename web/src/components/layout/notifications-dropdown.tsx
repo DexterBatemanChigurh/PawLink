@@ -15,12 +15,12 @@ const typeIcons: Record<string, typeof Heart> = {
 }
 
 const typeColors: Record<string, string> = {
-  follow: 'text-blue-500 bg-blue-100',
-  reaction: 'text-pink-500 bg-pink-100',
-  comment: 'text-green-500 bg-green-100',
-  match_request: 'text-purple-500 bg-purple-100',
-  match_accepted: 'text-emerald-500 bg-emerald-100',
-  match_adopted: 'text-rose-500 bg-rose-100',
+  follow: 'text-blue-500 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30',
+  reaction: 'text-pink-500 bg-pink-100 dark:text-pink-400 dark:bg-pink-900/30',
+  comment: 'text-green-500 bg-green-100 dark:text-green-400 dark:bg-green-900/30',
+  match_request: 'text-purple-500 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30',
+  match_accepted: 'text-emerald-500 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30',
+  match_adopted: 'text-rose-500 bg-rose-100 dark:text-rose-400 dark:bg-rose-900/30',
 }
 
 export function NotificationsDropdown() {
@@ -95,13 +95,13 @@ export function NotificationsDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+        <div className="absolute right-0 top-full mt-2 w-80 bg-card rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-y-auto">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-900">Notificações</h3>
             {unread > 0 && (
               <button
                 onClick={() => readAllMutation.mutate()}
-                className="text-xs font-semibold text-[#1877F2] hover:underline"
+                className="text-xs font-semibold text-primary hover:underline"
               >
                 Marcar todas como lidas
               </button>
@@ -127,7 +127,7 @@ export function NotificationsDropdown() {
                       else if (n.referenceType === 'user') navigate(`/profile?id=${n.referenceId}`)
                       setOpen(false)
                     }}
-                    className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}
+                    className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${!n.read ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''}`}
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
                       <Icon className="w-4 h-4" />
@@ -139,7 +139,7 @@ export function NotificationsDropdown() {
                       </p>
                     </div>
                     {!n.read && (
-                      <div className="w-2 h-2 rounded-full bg-[#1877F2] shrink-0 mt-1.5" />
+                      <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />
                     )}
                   </button>
                 )

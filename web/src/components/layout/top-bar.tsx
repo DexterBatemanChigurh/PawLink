@@ -2,9 +2,11 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/auth.store'
+import { useThemeStore } from '../../store/theme.store'
 import api from '../../services/api'
 import type { User, Conversation } from '../../types'
 import { NotificationsDropdown } from './notifications-dropdown'
+import { Avatar } from '../ui/avatar'
 import {
   PawPrint,
   Search,
@@ -14,6 +16,9 @@ import {
   PlusCircle,
   LogOut,
   X,
+  Moon,
+  Sun,
+  Settings,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -25,6 +30,7 @@ export function TopBar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
+  const { dark, toggle } = useThemeStore()
 
   const { data: conversations } = useQuery<Conversation[]>({
     queryKey: ['conversations-topbar'],
@@ -107,13 +113,13 @@ export function TopBar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-[#1877F2] shadow-md z-50">
+    <header className="fixed top-0 left-0 right-0 h-14 bg-primary shadow-md z-50">
       <div className="max-w-[1280px] mx-auto h-full px-2 sm:px-4 flex items-center justify-between gap-2">
         {/* Logo + Search */}
         <div className="flex items-center gap-2 shrink-0">
           <button onClick={() => navigate('/')} className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
-              <PawPrint className="w-5 h-5 text-[#1877F2]" />
+            <div className="w-9 h-9 rounded-full bg-card flex items-center justify-center">
+              <PawPrint className="w-5 h-5 text-primary" />
             </div>
             <span className="text-white font-bold text-xl hidden sm:block">PawLink</span>
           </button>
@@ -128,7 +134,7 @@ export function TopBar() {
             </button>
 
             {searchOpen && (
-              <div className="absolute left-0 top-full mt-1 w-80 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
+              <div className="absolute left-0 top-full mt-1 w-80 bg-card rounded-lg shadow-xl border border-gray-200 overflow-hidden">
                 <div className="p-3 border-b border-gray-100">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -139,11 +145,13 @@ export function TopBar() {
                       onChange={(e) => handleSearchChange(e.target.value)}
                       onKeyDown={handleSearchKeyDown}
                       placeholder="Pesquisar pessoas..."
-                      className="w-full pl-10 pr-9 py-2 rounded-lg bg-gray-100 text-sm outline-none focus:ring-2 focus:ring-[#1877F2]"
+                      aria-label="Pesquisar pessoas"
+                      className="w-full pl-10 pr-9 py-2 rounded-lg bg-gray-100 text-sm outline-none focus:ring-2 focus:ring-primary"
                     />
                     {searchQuery && (
                       <button
                         onClick={() => { setSearchQuery(''); setSearchResults([]); inputRef.current?.focus() }}
+                        aria-label="Limpar pesquisa"
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
                         <X className="w-4 h-4" />
@@ -165,15 +173,7 @@ export function TopBar() {
                           onClick={() => handleSelectUser(u.id)}
                           className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
                         >
-                          <div className="w-9 h-9 rounded-full bg-[#1877F2] flex items-center justify-center overflow-hidden shrink-0">
-                            {u.avatar ? (
-                              <img src={u.avatar} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-white text-xs font-semibold">
-                                {u.name.charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
+                          <Avatar src={u.avatar} name={u.name} size="sm" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-900 truncate">{u.name}</p>
                             <p className="text-xs text-gray-500 truncate">{u.email}</p>
@@ -182,7 +182,7 @@ export function TopBar() {
                       ))}
                       <button
                         onClick={() => { setSearchOpen(false); navigate(`/search?q=${encodeURIComponent(searchQuery)}`) }}
-                        className="w-full px-4 py-2.5 text-sm text-[#1877F2] font-semibold hover:bg-gray-50 border-t border-gray-100 transition-colors text-center"
+                        className="w-full px-4 py-2.5 text-sm text-primary font-semibold hover:bg-gray-50 border-t border-gray-100 transition-colors text-center"
                       >
                         Ver todos os resultados
                       </button>
@@ -214,7 +214,7 @@ export function TopBar() {
               >
                 <item.icon className="w-5 h-5" />
                 {isActive && (
-                  <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-white rounded-t-full" />
+                  <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-card rounded-t-full" />
                 )}
               </button>
             )
@@ -241,33 +241,42 @@ export function TopBar() {
             )}
           </button>
 
+          <button
+            onClick={toggle}
+            className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+            title={dark ? 'Modo claro' : 'Modo escuro'}
+          >
+            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
           <NotificationsDropdown />
 
           <div className="relative group">
-            <button className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center overflow-hidden hover:bg-white/30 transition-colors">
-              {user?.avatar ? (
-                <img src={user.avatar} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-white text-sm font-semibold">
-                  {user?.name?.charAt(0)?.toUpperCase()}
-                </span>
-              )}
+            <button aria-label="Menu do usuário" className="hover:bg-white/30 transition-colors rounded-full">
+              <Avatar src={user?.avatar} name={user?.name || ''} size="sm" />
             </button>
-            <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+            <div className="absolute right-0 top-full mt-1 w-52 bg-card rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
               <div className="p-3 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-900 truncate">{user?.name}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>
               <button
                 onClick={() => navigate('/profile')}
-                className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left flex items-center gap-2"
+                className="w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left flex items-center gap-2"
               >
                 <PawPrint className="w-4 h-4" />
                 Meu Perfil
               </button>
               <button
+                onClick={() => navigate('/settings')}
+                className="w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Configurações
+              </button>
+              <button
                 onClick={handleLogout}
-                className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left flex items-center gap-2"
+                className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-left flex items-center gap-2"
               >
                 <LogOut className="w-4 h-4" />
                 Sair

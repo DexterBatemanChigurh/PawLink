@@ -1,35 +1,21 @@
 import { useNavigate } from 'react-router-dom'
 import { Heart, Syringe, Scissors, MessageCircle } from 'lucide-react'
 import type { Pet } from '../../types'
+import { Avatar } from '../ui/avatar'
+import { SPECIES_EMOJI, SPECIES_LABEL } from '../../types/constants'
 
 interface PetPostProps {
   pet: Pet
-}
-
-const speciesEmoji: Record<string, string> = {
-  dog: '🐕', cat: '🐈', bird: '🐦', rabbit: '🐇', hamster: '🐹', other: '🐾',
-}
-
-const speciesLabel: Record<string, string> = {
-  dog: 'Cachorro', cat: 'Gato', bird: 'Pássaro', rabbit: 'Coelho', hamster: 'Hamster', other: 'Outro',
 }
 
 export function PetPost({ pet }: PetPostProps) {
   const navigate = useNavigate()
 
   return (
-    <article className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <article className="bg-card rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       {/* Header — like Facebook post header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-        <div className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center overflow-hidden shrink-0">
-          {pet.owner?.avatar ? (
-            <img src={pet.owner.avatar} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-white text-sm font-semibold">
-              {pet.owner?.name?.charAt(0)?.toUpperCase() || '?'}
-            </span>
-          )}
-        </div>
+        <Avatar src={pet.owner?.avatar} name={pet.owner?.name || '?'} size="md" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900 truncate">
             {pet.owner?.name || 'Tutor'}
@@ -48,9 +34,9 @@ export function PetPost({ pet }: PetPostProps) {
       {/* Photo */}
       <div className="bg-gray-100 flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
         {pet.photos?.[0] ? (
-          <img src={pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
+          <img loading="lazy" decoding="async" src={pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-7xl opacity-40">{speciesEmoji[pet.species] || '🐾'}</span>
+          <span className="text-7xl opacity-40">{SPECIES_EMOJI[pet.species] || '🐾'}</span>
         )}
       </div>
 
@@ -59,7 +45,7 @@ export function PetPost({ pet }: PetPostProps) {
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-bold text-gray-900">{pet.name}</h2>
           <span className="text-xs text-gray-400">
-            {speciesLabel[pet.species] || pet.species}
+            {SPECIES_LABEL[pet.species] || pet.species}
             {pet.breed ? ` · ${pet.breed}` : ' · SRD'}
             {pet.age ? ` · ${pet.age} ${pet.age === 1 ? 'ano' : 'anos'}` : ''}
           </span>
@@ -94,7 +80,7 @@ export function PetPost({ pet }: PetPostProps) {
       <div className="px-4 pb-3 flex gap-2">
         <button
           onClick={() => navigate(`/pets/${pet.id}`)}
-          className="flex-1 bg-[#1877F2] text-white py-2 rounded-lg text-sm font-semibold hover:bg-[#166FE5] transition-colors flex items-center justify-center gap-1.5"
+          className="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors flex items-center justify-center gap-1.5"
         >
           <Heart className="w-4 h-4" />
           Quero Adotar

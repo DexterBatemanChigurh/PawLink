@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 import type { Pet } from '../../types'
-import { Save } from 'lucide-react'
+import { PetCardSkeleton } from '../../components/ui/skeleton'
+import { FileUpload } from '../../components/ui/file-upload'
+import { uploadMultiple } from '../../services/upload'
+import { Save, X } from 'lucide-react'
 
 export function EditPetPage() {
   const { id } = useParams<{ id: string }>()
@@ -34,6 +37,9 @@ export function EditPetPage() {
     city: '',
     state: '',
   })
+  const [newPhotos, setNewPhotos] = useState<File[]>([])
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (pet) {
@@ -52,14 +58,22 @@ export function EditPetPage() {
         city: pet.city || '',
         state: pet.state || '',
       })
+      setExistingPhotos(pet.photos || [])
     }
   }, [pet])
 
   const mutation = useMutation({
     mutationFn: async () => {
+      setUploading(true)
+      let photoUrls = [...existingPhotos]
+      if (newPhotos.length > 0) {
+        const uploaded = await uploadMultiple(newPhotos, '/upload')
+        photoUrls = [...photoUrls, ...uploaded]
+      }
       const payload = {
         ...form,
         age: form.age ? Number(form.age) : undefined,
+        photos: photoUrls,
       }
       await api.patch(`/pets/${id}`, payload)
     },
@@ -67,6 +81,9 @@ export function EditPetPage() {
       queryClient.invalidateQueries({ queryKey: ['pet', id] })
       queryClient.invalidateQueries({ queryKey: ['my-pets'] })
       navigate(`/pets/${id}`)
+    },
+    onSettled: () => {
+      setUploading(false)
     },
   })
 
@@ -87,7 +104,7 @@ export function EditPetPage() {
   ]
 
   if (isLoading) {
-    return <div className="text-gray-400 text-center py-20">Carregando...</div>
+    return <PetCardSkeleton />
   }
 
   if (!pet) {
@@ -98,7 +115,29 @@ export function EditPetPage() {
     <div className="max-w-lg mx-auto">
       <h1 className="text-xl font-bold text-gray-900 mb-4">Editar {pet.name}</h1>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 space-y-4">
+      <div className="bg-card rounded-lg shadow-sm border border-gray-200 p-5 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Fotos</label>
+          {existingPhotos.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+              {existingPhotos.map((url, idx) => (
+                <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                  <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-28 object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setExistingPhotos((prev) => prev.filter((_, i) => i !== idx))}
+                    aria-label="Remover foto"
+                    className="absolute top-1 right-1 w-6 h-6 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <FileUpload onFilesSelected={setNewPhotos} maxFiles={10} />
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2 sm:col-span-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
@@ -106,7 +145,7 @@ export function EditPetPage() {
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
               required
             />
           </div>
@@ -115,7 +154,7 @@ export function EditPetPage() {
             <select
               value={form.species}
               onChange={(e) => setForm({ ...form, species: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none bg-white"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-card"
             >
               {speciesList.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -131,7 +170,7 @@ export function EditPetPage() {
               type="text"
               value={form.breed}
               onChange={(e) => setForm({ ...form, breed: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
             />
           </div>
           <div>
@@ -140,7 +179,7 @@ export function EditPetPage() {
               type="text"
               value={form.color}
               onChange={(e) => setForm({ ...form, color: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
             />
           </div>
         </div>
@@ -151,7 +190,7 @@ export function EditPetPage() {
             <select
               value={form.size}
               onChange={(e) => setForm({ ...form, size: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none bg-white"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-card"
             >
               {sizeList.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -164,7 +203,7 @@ export function EditPetPage() {
               type="number"
               value={form.age}
               onChange={(e) => setForm({ ...form, age: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
               min={0}
             />
           </div>
@@ -173,7 +212,7 @@ export function EditPetPage() {
             <select
               value={form.ageUnit}
               onChange={(e) => setForm({ ...form, ageUnit: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none bg-white"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-card"
             >
               <option value="anos">Anos</option>
               <option value="months">Meses</option>
@@ -188,7 +227,7 @@ export function EditPetPage() {
               type="text"
               value={form.city}
               onChange={(e) => setForm({ ...form, city: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
             />
           </div>
           <div>
@@ -197,7 +236,7 @@ export function EditPetPage() {
               type="text"
               value={form.state}
               onChange={(e) => setForm({ ...form, state: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
               maxLength={2}
             />
           </div>
@@ -209,7 +248,7 @@ export function EditPetPage() {
             type="text"
             value={form.temperament}
             onChange={(e) => setForm({ ...form, temperament: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
           />
         </div>
 
@@ -218,7 +257,7 @@ export function EditPetPage() {
           <textarea
             value={form.story}
             onChange={(e) => setForm({ ...form, story: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] outline-none"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
             rows={3}
           />
         </div>
@@ -229,7 +268,7 @@ export function EditPetPage() {
               type="checkbox"
               checked={form.castrated}
               onChange={(e) => setForm({ ...form, castrated: e.target.checked })}
-              className="w-4 h-4 text-[#1877F2] rounded border-gray-300"
+              className="w-4 h-4 text-primary rounded border-gray-300"
             />
             <span className="text-sm text-gray-700">Castrado</span>
           </label>
@@ -238,14 +277,14 @@ export function EditPetPage() {
               type="checkbox"
               checked={form.vaccinated}
               onChange={(e) => setForm({ ...form, vaccinated: e.target.checked })}
-              className="w-4 h-4 text-[#1877F2] rounded border-gray-300"
+              className="w-4 h-4 text-primary rounded border-gray-300"
             />
             <span className="text-sm text-gray-700">Vacinado</span>
           </label>
         </div>
 
         {mutation.isError && (
-          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg">
+          <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-lg">
             Erro ao salvar. Verifique os dados e tente novamente.
           </div>
         )}
@@ -253,10 +292,10 @@ export function EditPetPage() {
         <button
           onClick={() => mutation.mutate()}
           disabled={!form.name || mutation.isPending}
-          className="w-full bg-[#1877F2] text-white py-3 rounded-lg font-medium hover:bg-[#166FE5] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
         >
           <Save className="w-5 h-5" />
-          {mutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+          {uploading || mutation.isPending ? 'Enviando fotos...' : 'Salvar Alterações'}
         </button>
       </div>
     </div>

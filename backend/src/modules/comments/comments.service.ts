@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Comment } from './entities/comment.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { UpdateCommentDto } from './dto/update-comment.dto';
 import { PostsService } from '../posts/posts.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/entities/notification.entity';
@@ -53,6 +54,14 @@ export class CommentsService {
     });
 
     return comments;
+  }
+
+  async update(id: string, userId: string, dto: UpdateCommentDto): Promise<Comment> {
+    const comment = await this.commentsRepository.findOne({ where: { id } });
+    if (!comment) throw new NotFoundException('Comentário não encontrado');
+    if (comment.userId !== userId) throw new ForbiddenException('Você não pode editar este comentário');
+    comment.content = dto.content;
+    return this.commentsRepository.save(comment);
   }
 
   async remove(id: string, userId: string): Promise<void> {

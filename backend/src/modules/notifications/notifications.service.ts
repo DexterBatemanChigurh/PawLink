@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification, NotificationType } from './entities/notification.entity';
+import { PushSubscriptionsService } from '../push-subscriptions/push-subscriptions.service';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private notificationsRepository: Repository<Notification>,
+    private pushService: PushSubscriptionsService,
   ) {}
 
   async create(dto: {
@@ -18,7 +20,17 @@ export class NotificationsService {
     referenceType?: string;
   }): Promise<Notification> {
     const notification = this.notificationsRepository.create(dto);
-    return this.notificationsRepository.save(notification);
+    const saved = await this.notificationsRepository.save(notification);
+
+    this.pushService.sendToUser(dto.userId, {
+      title: 'PawLink',
+      body: dto.message,
+      icon: '/favicon.svg',
+      badge: '/favicon.svg',
+      data: { url: '/', notificationId: saved.id },
+    });
+
+    return saved;
   }
 
   async findByUser(userId: string): Promise<Notification[]> {

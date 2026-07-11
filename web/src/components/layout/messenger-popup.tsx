@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
+import { Skeleton } from '../ui/skeleton'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { MessageCircle, X, ChevronDown } from 'lucide-react'
 import api from '../../services/api'
 import { getSocket } from '../../services/socket'
 import type { Conversation } from '../../types'
+import { Avatar } from '../ui/avatar'
 
 export function MessengerPopup() {
   const navigate = useNavigate()
@@ -57,11 +59,11 @@ export function MessengerPopup() {
     <div ref={ref} className="fixed bottom-4 right-4 z-50">
       {/* Popup */}
       {open && (
-        <div className="absolute bottom-16 right-0 w-80 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden flex flex-col">
+        <div className="absolute bottom-16 right-0 w-80 bg-card rounded-lg shadow-xl border border-gray-200 overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="bg-[#1877F2] text-white px-4 py-3 flex items-center justify-between">
+          <div className="bg-primary text-white px-4 py-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold">Conversas</h3>
-            <button onClick={() => setOpen(false)} className="hover:bg-white/20 rounded p-0.5">
+            <button onClick={() => setOpen(false)} aria-label="Fechar messenger" className="hover:bg-white/20 rounded p-0.5">
               <ChevronDown className="w-4 h-4" />
             </button>
           </div>
@@ -69,7 +71,9 @@ export function MessengerPopup() {
           {/* List */}
           <div className="overflow-y-auto max-h-96">
             {isLoading ? (
-              <div className="text-center py-8 text-sm text-gray-400">Carregando...</div>
+              <div className="space-y-2 p-3">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
+              </div>
             ) : !conversations?.length ? (
               <div className="text-center py-8 text-sm text-gray-400">
                 Nenhuma conversa ativa
@@ -84,18 +88,12 @@ export function MessengerPopup() {
                       navigate(`/messages/${conv.matchId}`)
                       setOpen(false)
                     }}
-                    className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
+                    className="w-full px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left flex items-center gap-3"
                   >
                     <div className="relative shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center text-xs font-medium text-white overflow-hidden">
-                        {conv.otherUserAvatar ? (
-                          <img src={conv.otherUserAvatar} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          conv.otherUserName.charAt(0).toUpperCase()
-                        )}
-                      </div>
+                      <Avatar src={conv.otherUserAvatar} name={conv.otherUserName} size="md" />
                       {isOnline && (
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-700 rounded-full" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -125,7 +123,7 @@ export function MessengerPopup() {
           {/* Footer */}
           <button
             onClick={() => { navigate('/conversations'); setOpen(false) }}
-            className="w-full px-4 py-2.5 text-sm font-semibold text-[#1877F2] border-t border-gray-100 hover:bg-gray-50 transition-colors"
+            className="w-full px-4 py-2.5 text-sm font-semibold text-primary border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Ver todas no Messenger
           </button>
@@ -135,7 +133,7 @@ export function MessengerPopup() {
       {/* Toggle button */}
       <button
         onClick={() => setOpen(!open)}
-        className="relative w-12 h-12 rounded-full bg-[#1877F2] text-white shadow-lg hover:bg-[#166fe5] transition-colors flex items-center justify-center"
+        className="relative w-12 h-12 rounded-full bg-primary text-white shadow-lg hover:bg-primary-hover transition-colors flex items-center justify-center"
         title="Messenger"
       >
         {open ? (

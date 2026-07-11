@@ -48,6 +48,9 @@ export class User {
   avatar: string;
 
   @Column({ nullable: true })
+  coverPhoto: string;
+
+  @Column({ nullable: true })
   bio: string;
 
   @Column({
@@ -84,6 +87,15 @@ export class User {
 
   @Column({ nullable: true })
   refreshToken: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  passwordResetToken: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  passwordResetExpires: Date | null;
+
+  @Column({ type: 'jsonb', default: { postVisibility: 'public', messagePrivacy: 'everyone', notificationPush: true } })
+  settings: { postVisibility: string; messagePrivacy: string; notificationPush: boolean };
 
   @CreateDateColumn()
   createdAt: Date;

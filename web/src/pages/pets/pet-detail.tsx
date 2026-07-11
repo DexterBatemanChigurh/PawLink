@@ -3,18 +3,28 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/auth.store'
+import { useConfirmStore } from '../../store/confirm.store'
+import { PetCardSkeleton } from '../../components/ui/skeleton'
+import { QueryState } from '../../components/ui/query-state'
 import type { Pet, TimelineEvent } from '../../types'
-import { Heart, Pencil, Trash2 } from 'lucide-react'
+import { Heart, Pencil, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Lightbox } from '../../components/ui/lightbox'
+import { SPECIES_EMOJI, SPECIES_LABEL } from '../../types/constants'
 
 export function PetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const confirm = useConfirmStore()
   const [showForm, setShowForm] = useState(false)
   const [message, setMessage] = useState('')
   const [phone, setPhone] = useState('')
+  const [interestError, setInterestError] = useState('')
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [galleryStart, setGalleryStart] = useState(0)
+  const photos = pet?.photos || []
 
-  const { data: pet, isLoading } = useQuery<Pet>({
+  const { data: pet, isLoading, isError, error } = useQuery<Pet>({
     queryKey: ['pet', id],
     queryFn: async () => {
       const { data } = await api.get(`/pets/${id}`)
@@ -35,15 +45,50 @@ export function PetDetailPage() {
   const user = useAuthStore((s) => s.user)
   const isOwner = user?.id === pet?.ownerId
 
+  const { data: isFavorited } = useQuery<boolean>({
+    queryKey: ['favorite', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/favorites/${id}`)
+      return data
+    },
+    enabled: !!id,
+  })
+
+  const favoriteMutation = useMutation({
+    mutationFn: async () => {
+      if (isFavorited) {
+        await api.delete(`/favorites/${id}`)
+      } else {
+        await api.post(`/favorites/${id}`)
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorite', id] })
+    },
+  })
+
   const interestMutation = useMutation({
     mutationFn: async () => {
-      await api.post(`/matches/pets/${id}`, { message, phone })
+      const { data } = await api.post(`/matches/pets/${id}`, { message, phone })
+      return data
     },
     onSuccess: () => {
       setShowForm(false)
       setMessage('')
       setPhone('')
+      setInterestError('')
       queryClient.invalidateQueries({ queryKey: ['matches'] })
+    },
+    onError: (err) => {
+      const e = err as { response?: { status?: number; data?: { message?: string } } }
+      const msg = e?.response?.data?.message
+      if (e?.response?.status === 409) {
+        setInterestError('Você já manifestou interesse neste pet')
+      } else if (msg) {
+        setInterestError(msg)
+      } else {
+        setInterestError('Erro ao enviar. Tente novamente.')
+      }
     },
   })
 
@@ -74,7 +119,15 @@ export function PetDetailPage() {
   }
 
   if (isLoading) {
-    return <div className="text-gray-400 text-center py-20">Carregando...</div>
+    return <PetCardSkeleton />
+  }
+
+  if (isError) {
+    return (
+      <QueryState isLoading={false} isError={true} error={error}>
+        <div />
+      </QueryState>
+    )
   }
 
   if (!pet) {
@@ -83,12 +136,16 @@ export function PetDetailPage() {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
+      <div className="bg-card rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
         <div className="relative bg-gray-100 flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
-          {pet.photos?.[0] ? (
-            <img src={pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
+          {photos[0] ? (
+            <img
+              loading="lazy" decoding="async" src={photos[0]} alt={pet.name}
+              className="w-full h-full object-cover cursor-pointer"
+              onClick={() => setLightboxIndex(0)}
+            />
           ) : (
-            <span className="text-7xl opacity-40">{pet.species === 'dog' ? '🐕' : pet.species === 'cat' ? '🐈' : '🐾'}</span>
+            <span className="text-7xl opacity-40">{SPECIES_EMOJI[pet.species] || '🐾'}</span>
           )}
           {pet.status === 'available' && (
             <span className="absolute top-3 left-3 bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
@@ -97,19 +154,62 @@ export function PetDetailPage() {
           )}
         </div>
 
+        {photos.length > 1 && (
+          <div className="relative px-4 py-3 border-t border-gray-100">
+            <div className="flex gap-2 overflow-hidden">
+              {photos.slice(galleryStart, galleryStart + 4).map((url, i) => (
+                <button
+                  key={i}
+                  onClick={() => setLightboxIndex(galleryStart + i)}
+                  className={`w-20 h-20 rounded-lg overflow-hidden shrink-0 border-2 transition-colors ${
+                    galleryStart + i === 0 ? 'border-primary' : 'border-transparent hover:border-gray-300'
+                  }`}
+                >
+                  <img loading="lazy" decoding="async" src={url} alt={`${pet.name} ${galleryStart + i + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+            {galleryStart > 0 && (
+              <button
+                onClick={() => setGalleryStart((p) => Math.max(0, p - 1))}
+                aria-label="Fotos anteriores"
+                className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/80 dark:bg-gray-800/80 rounded-full flex items-center justify-center shadow hover:bg-white dark:hover:bg-gray-800"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            )}
+            {galleryStart + 4 < photos.length && (
+              <button
+                onClick={() => setGalleryStart((p) => Math.min(photos.length - 4, p + 1))}
+                aria-label="Próximas fotos"
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/80 dark:bg-gray-800/80 rounded-full flex items-center justify-center shadow hover:bg-white dark:hover:bg-gray-800"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="p-5 space-y-4">
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{pet.name}</h2>
-              <p className="text-gray-500">{pet.species === 'dog' ? 'Cachorro' : pet.species === 'cat' ? 'Gato' : pet.species}</p>
+              <p className="text-gray-500">{SPECIES_LABEL[pet.species] || pet.species}</p>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => favoriteMutation.mutate()}
+                aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                className={`p-2 rounded-lg transition-colors ${isFavorited ? 'text-red-500 hover:bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+              >
+                <Heart className={`w-5 h-5 ${isFavorited ? 'fill-red-500' : ''}`} />
+              </button>
               {isOwner && (
                 <>
-                  <button onClick={() => navigate(`/pets/${pet.id}/edit`)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                  <button onClick={() => navigate(`/pets/${pet.id}/edit`)} aria-label="Editar pet" className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
                     <Pencil className="w-5 h-5" />
                   </button>
-                  <button onClick={() => { if (window.confirm(`Tem certeza que deseja excluir ${pet.name}?`)) deleteMutation.mutate() }} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  <button onClick={() => confirm.show({ title: 'Excluir pet', message: `Tem certeza que deseja excluir ${pet?.name}?`, variant: 'danger', confirmLabel: 'Excluir', onConfirm: () => deleteMutation.mutate() })} aria-label="Excluir pet" className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </>
@@ -123,11 +223,11 @@ export function PetDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">🐶 {pet.breed || 'SRD'}</span>
-            {pet.age && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">🎂 {pet.age} {pet.age === 1 ? 'ano' : 'anos'}</span>}
-            {pet.city && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">📍 {pet.city}{pet.state ? `, ${pet.state}` : ''}</span>}
-            {pet.castrated && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">Castrado</span>}
-            {pet.vaccinated && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm">Vacinado</span>}
+            <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm">🐶 {pet.breed || 'SRD'}</span>
+            {pet.age && <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm">🎂 {pet.age} {pet.age === 1 ? 'ano' : 'anos'}</span>}
+            {pet.city && <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm">📍 {pet.city}{pet.state ? `, ${pet.state}` : ''}</span>}
+            {pet.castrated && <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm">Castrado</span>}
+            {pet.vaccinated && <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm">Vacinado</span>}
           </div>
 
           {pet.temperament && (
@@ -144,10 +244,10 @@ export function PetDetailPage() {
             </div>
           )}
 
-          {pet.status === 'available' && !showForm && (
+          {pet.status === 'available' && !showForm && !isOwner && (
             <button
-              onClick={() => setShowForm(true)}
-              className="w-full bg-[#1877F2] text-white py-3 rounded-lg font-medium hover:bg-[#166FE5] transition-colors flex items-center justify-center gap-2"
+              onClick={() => { setShowForm(true); interestMutation.reset() }}
+              className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary-hover transition-colors flex items-center justify-center gap-2"
             >
               <Heart className="w-5 h-5" />
               Quero Adotar!
@@ -157,12 +257,13 @@ export function PetDetailPage() {
           {showForm && (
             <div className="bg-gray-50 rounded-lg p-4 space-y-3">
               <h3 className="font-semibold text-gray-900">Manifestar Interesse</h3>
-              {interestMutation.isError && <div className="text-red-600 text-sm">Erro ao enviar. Tente novamente.</div>}
+              {interestError && <div className="text-red-600 text-sm">{interestError}</div>}
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Conte um pouco sobre você e por que deseja adotar..."
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] focus:border-transparent outline-none"
+                aria-label="Mensagem de interesse"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                 rows={3}
                 maxLength={500}
               />
@@ -171,19 +272,20 @@ export function PetDetailPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Telefone para contato"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1877F2] focus:border-transparent outline-none"
+                aria-label="Telefone para contato"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               />
               <div className="flex gap-2">
                 <button
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"
+                  onClick={() => { setShowForm(false); setInterestError('') }}
+                  className="flex-1 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => interestMutation.mutate()}
                   disabled={interestMutation.isPending}
-                  className="flex-1 bg-[#1877F2] text-white py-2 rounded-lg text-sm font-medium hover:bg-[#166FE5] disabled:opacity-50"
+                  className="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary-hover disabled:opacity-50"
                 >
                   {interestMutation.isPending ? 'Enviando...' : 'Enviar'}
                 </button>
@@ -196,8 +298,17 @@ export function PetDetailPage() {
         </div>
       </div>
 
+      {lightboxIndex !== null && (
+        <Lightbox
+          images={photos}
+          currentIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
+
       {timeline && timeline.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+        <div className="bg-card rounded-lg shadow-sm border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-4">Timeline</h3>
           <div className="space-y-3">
             {timeline.map((event) => (

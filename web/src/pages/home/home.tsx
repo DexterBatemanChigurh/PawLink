@@ -3,6 +3,8 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import type { Pet } from '../../types'
 import { PetPost } from '../../components/posts/pet-post'
+import { EmptyState } from '../../components/ui/empty-state'
+import { PawPrint } from 'lucide-react'
 
 const speciesList = [
   { key: '', label: 'Todos', icon: '🐾' },
@@ -67,8 +69,8 @@ export function PetListingPage() {
             onClick={() => setSpecies(s.key)}
             className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               species === s.key
-                ? 'bg-[#1877F2] text-white shadow-sm'
-                : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'
+                ? 'bg-primary text-white shadow-sm'
+                : 'bg-card text-gray-600 border border-gray-300 hover:bg-gray-100'
             }`}
           >
             {s.icon} {s.label}
@@ -79,7 +81,7 @@ export function PetListingPage() {
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden animate-pulse">
+            <div key={i} className="bg-card rounded-lg shadow-sm border border-gray-200 overflow-hidden animate-pulse">
               <div className="bg-gray-200" style={{ aspectRatio: '16/9' }} />
               <div className="p-4 space-y-3">
                 <div className="h-5 bg-gray-200 rounded w-1/3" />
@@ -91,11 +93,7 @@ export function PetListingPage() {
           ))}
         </div>
       ) : !allPets.length ? (
-        <div className="text-center py-20">
-          <div className="text-6xl mb-4">🐶</div>
-          <p className="text-gray-500 text-lg">Nenhum pet encontrado</p>
-          <p className="text-gray-400 text-sm mt-1">Tente alterar o filtro ou volte mais tarde</p>
-        </div>
+        <EmptyState icon={PawPrint} title="Nenhum pet encontrado" description="Tente alterar o filtro ou volte mais tarde" />
       ) : (
         <div className="space-y-4">
           {allPets.map((pet) => (

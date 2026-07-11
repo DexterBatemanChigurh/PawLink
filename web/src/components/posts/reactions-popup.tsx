@@ -18,7 +18,7 @@ const reactions: { type: ReactionType; icon: typeof ThumbsUp; label: string; col
 export function ReactionsPopup({ onReact, onClose }: ReactionsPopupProps) {
   return (
     <div
-      className="absolute bottom-full left-0 mb-2 bg-white rounded-full shadow-lg border border-gray-200 px-2 py-1.5 flex items-center gap-1 z-50"
+      className="absolute bottom-full left-0 mb-2 bg-card rounded-full shadow-lg border border-gray-200 px-2 py-1.5 flex items-center gap-1 z-50"
       onMouseLeave={onClose}
     >
       {reactions.map((r) => (
