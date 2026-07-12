@@ -20,9 +20,11 @@ export function ShareModal({ post, onClose, onShared }: ShareModalProps) {
   const [quote, setQuote] = useState('')
   const [copied, setCopied] = useState(false)
 
+  const originalPostId = post.sharedPost?.id || post.id
+
   const shareMutation = useMutation({
     mutationFn: async () => {
-      await api.post(`/posts/${post.id}/share`, { content: quote.trim() || undefined })
+      await api.post(`/posts/${originalPostId}/share`, { content: quote.trim() || undefined })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] })

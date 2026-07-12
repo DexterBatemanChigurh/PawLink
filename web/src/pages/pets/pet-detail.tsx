@@ -22,7 +22,6 @@ export function PetDetailPage() {
   const [interestError, setInterestError] = useState('')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [galleryStart, setGalleryStart] = useState(0)
-  const photos = pet?.photos || []
 
   const { data: pet, isLoading, isError, error } = useQuery<Pet>({
     queryKey: ['pet', id],
@@ -138,9 +137,9 @@ export function PetDetailPage() {
     <>
       <div className="bg-card rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
         <div className="relative bg-gray-100 flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
-          {photos[0] ? (
+          {(pet?.photos || [])[0] ? (
             <img
-              loading="lazy" decoding="async" src={photos[0]} alt={pet.name}
+              loading="lazy" decoding="async" src={(pet?.photos || [])[0]} alt={pet.name}
               className="w-full h-full object-cover cursor-pointer"
               onClick={() => setLightboxIndex(0)}
             />
@@ -154,10 +153,10 @@ export function PetDetailPage() {
           )}
         </div>
 
-        {photos.length > 1 && (
+        {(pet?.photos || []).length > 1 && (
           <div className="relative px-4 py-3 border-t border-gray-100">
             <div className="flex gap-2 overflow-hidden">
-              {photos.slice(galleryStart, galleryStart + 4).map((url, i) => (
+              {(pet?.photos || []).slice(galleryStart, galleryStart + 4).map((url, i) => (
                 <button
                   key={i}
                   onClick={() => setLightboxIndex(galleryStart + i)}
@@ -178,9 +177,9 @@ export function PetDetailPage() {
                 <ChevronLeft className="w-4 h-4" />
               </button>
             )}
-            {galleryStart + 4 < photos.length && (
+            {galleryStart + 4 < (pet?.photos || []).length && (
               <button
-                onClick={() => setGalleryStart((p) => Math.min(photos.length - 4, p + 1))}
+                onClick={() => setGalleryStart((p) => Math.min((pet?.photos || []).length - 4, p + 1))}
                 aria-label="Próximas fotos"
                 className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/80 dark:bg-gray-800/80 rounded-full flex items-center justify-center shadow hover:bg-white dark:hover:bg-gray-800"
               >
@@ -300,7 +299,7 @@ export function PetDetailPage() {
 
       {lightboxIndex !== null && (
         <Lightbox
-          images={photos}
+          images={pet?.photos || []}
           currentIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onNavigate={setLightboxIndex}
