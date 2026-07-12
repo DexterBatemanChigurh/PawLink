@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 import { getSocket, emitTyping, emitStopTyping } from '../../services/socket'
 import { useAuthStore } from '../../store/auth.store'
+import { useToastStore } from '../../store/toast.store'
 import type { Conversation, Message as MessageType, User } from '../../types'
 import { Skeleton } from '../../components/ui/skeleton'
 import { Avatar } from '../../components/ui/avatar'
@@ -181,6 +182,7 @@ function ChatPanel({ matchId }: ChatPanelProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
+  const toast = useToastStore()
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<MessageType[]>([])
   const [otherUser, setOtherUser] = useState<User | null>(null)
@@ -214,6 +216,10 @@ function ChatPanel({ matchId }: ChatPanelProps) {
     const socket = getSocket()
     socket.emit('join_match', { matchId })
 
+    const handleError = (err: { message: string }) => {
+      toast.add(err.message || 'Erro ao enviar mensagem', 'error')
+    }
+
     const handleNewMessage = (message: MessageType) => {
       setMessages((prev) => {
         if (prev.some((m) => m.id === message.id)) return prev
@@ -244,6 +250,7 @@ function ChatPanel({ matchId }: ChatPanelProps) {
     socket.on('user_offline', handleOffline)
     socket.on('user_typing', handleTyping)
     socket.on('user_stop_typing', handleStopTyping)
+    socket.on('error', handleError)
 
     return () => {
       socket.emit('leave_match', { matchId })
@@ -252,6 +259,7 @@ function ChatPanel({ matchId }: ChatPanelProps) {
       socket.off('user_offline', handleOffline)
       socket.off('user_typing', handleTyping)
       socket.off('user_stop_typing', handleStopTyping)
+      socket.off('error', handleError)
     }
   }, [matchId, queryClient, userId])
 
