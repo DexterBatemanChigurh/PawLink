@@ -5,7 +5,7 @@ import api from '../../services/api'
 import { getSocket, emitTyping, emitStopTyping } from '../../services/socket'
 import { useAuthStore } from '../../store/auth.store'
 import { useToastStore } from '../../store/toast.store'
-import type { Conversation, Message as MessageType, User } from '../../types'
+import type { Conversation, Message as MessageType, User, Match } from '../../types'
 import { Skeleton } from '../../components/ui/skeleton'
 import { Avatar } from '../../components/ui/avatar'
 import { MessageSquare, Send, Check, CheckCheck, Search, ArrowLeft } from 'lucide-react'
@@ -202,6 +202,23 @@ function ChatPanel({ matchId }: ChatPanelProps) {
     enabled: !!matchId,
   })
 
+  const { data: matchData } = useQuery<Match>({
+    queryKey: ['match', matchId],
+    queryFn: async () => {
+      const { data } = await api.get(`/matches/${matchId}`)
+      return data
+    },
+    enabled: !!matchId,
+  })
+
+  useEffect(() => {
+    if (matchData && !otherUser) {
+      const isOwner = matchData.pet?.ownerId === userId
+      const other = isOwner ? matchData.interestedUser : matchData.pet?.owner
+      if (other) setOtherUser(other as User)
+    }
+  }, [matchData, userId, otherUser])
+
   useEffect(() => {
     if (initialMessages && initialMessages.length > 0) {
       setMessages(initialMessages)
@@ -245,12 +262,26 @@ function ChatPanel({ matchId }: ChatPanelProps) {
       if (payload.userId !== userId) setTypingUser(false)
     }
 
+    const handleConnect = () => {
+      console.log('[ChatPanel] Socket connected')
+    }
+    const handleDisconnect = (reason: string) => {
+      console.log('[ChatPanel] Socket disconnected:', reason)
+    }
+    const handleConnectError = (err: Error) => {
+      console.error('[ChatPanel] Socket connection error:', err.message)
+      toast.add('Erro de conexão com o chat', 'error')
+    }
+
     socket.on('new_message', handleNewMessage)
     socket.on('user_online', handleOnline)
     socket.on('user_offline', handleOffline)
     socket.on('user_typing', handleTyping)
     socket.on('user_stop_typing', handleStopTyping)
     socket.on('error', handleError)
+    socket.on('connect', handleConnect)
+    socket.on('disconnect', handleDisconnect)
+    socket.on('connect_error', handleConnectError)
 
     return () => {
       socket.emit('leave_match', { matchId })
@@ -260,6 +291,9 @@ function ChatPanel({ matchId }: ChatPanelProps) {
       socket.off('user_typing', handleTyping)
       socket.off('user_stop_typing', handleStopTyping)
       socket.off('error', handleError)
+      socket.off('connect', handleConnect)
+      socket.off('disconnect', handleDisconnect)
+      socket.off('connect_error', handleConnectError)
     }
   }, [matchId, queryClient, userId])
 

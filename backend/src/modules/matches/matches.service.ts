@@ -87,7 +87,10 @@ export class MatchesService {
   }
 
   async findById(id: string): Promise<Match> {
-    const match = await this.matchesRepository.findOne({ where: { id } });
+    const match = await this.matchesRepository.findOne({
+      where: { id },
+      relations: { pet: { owner: true }, interestedUser: true },
+    });
     if (!match) throw new NotFoundException('Match não encontrado');
     return match;
   }

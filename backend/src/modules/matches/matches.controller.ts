@@ -67,6 +67,14 @@ export class MatchesController {
     return this.matchesService.findByPet(petId);
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Obter match por ID' })
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.matchesService.findById(id);
+  }
+
   @Post(':id/status')
   @ApiOperation({ summary: 'Aceitar/rejeitar pedido de adoção' })
   updateStatus(
