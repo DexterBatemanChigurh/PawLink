@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Heart, MessageCircle, Share2, Megaphone, Calendar, Home, Stethoscope, MoreHorizontal, Pencil, Trash2, Bookmark, Globe, Flag, X } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Megaphone, Calendar, Home, Stethoscope, MoreHorizontal, Pencil, Trash2, Bookmark, Globe, Flag, X, PawPrint } from 'lucide-react'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/auth.store'
 import { useConfirmStore } from '../../store/confirm.store'
@@ -12,6 +12,7 @@ import { CommentsSection } from './comments-section'
 import { ShareModal } from './share-modal'
 import { Avatar } from '../ui/avatar'
 import { ROLE_BADGE } from '../../types/constants'
+import { CheckCircle } from 'lucide-react'
 
 interface PostCardProps {
   post: Post
@@ -136,18 +137,39 @@ export function PostCard({ post }: PostCardProps) {
     <article className="bg-card rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       {/* Header - Facebook style */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-2">
-        <button onClick={() => navigate(`/profile?id=${post.authorId}`)} aria-label={`Ver perfil de ${post.author.name}`} className="shrink-0">
-          <Avatar src={post.author.avatar} name={post.author.name} size="md" />
-        </button>
+        {post.organization ? (
+          <button onClick={() => navigate(`/org/${post.organization.slug}`)} aria-label={`Ver perfil de ${post.organization.name}`} className="shrink-0">
+            <Avatar src={post.organization.avatar} name={post.organization.name} size="md" />
+          </button>
+        ) : (
+          <button onClick={() => navigate(`/profile?id=${post.authorId}`)} aria-label={`Ver perfil de ${post.author.name}`} className="shrink-0">
+            <Avatar src={post.author.avatar} name={post.author.name} size="md" />
+          </button>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate(`/profile?id=${post.authorId}`)}
-              className="text-[15px] font-semibold text-gray-900 truncate hover:underline leading-tight"
-            >
-              {post.author.name}
-            </button>
-            {ROLE_BADGE[post.author.role] && (
+            {post.organization ? (
+              <>
+                <PawPrint className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                <button
+                  onClick={() => navigate(`/org/${post.organization.slug}`)}
+                  className="text-[15px] font-semibold text-gray-900 truncate hover:underline leading-tight"
+                >
+                  {post.organization.name}
+                </button>
+                {post.organization.verified && (
+                  <CheckCircle className="w-4 h-4 text-blue-500 fill-blue-500 shrink-0" />
+                )}
+              </>
+            ) : (
+              <button
+                onClick={() => navigate(`/profile?id=${post.authorId}`)}
+                className="text-[15px] font-semibold text-gray-900 truncate hover:underline leading-tight"
+              >
+                {post.author.name}
+              </button>
+            )}
+            {!post.organization && ROLE_BADGE[post.author.role] && (
               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${ROLE_BADGE[post.author.role].color} shrink-0`}>
                 {ROLE_BADGE[post.author.role].label}
               </span>
@@ -158,6 +180,17 @@ export function PostCard({ post }: PostCardProps) {
             </span>
           </div>
           <div className="flex items-center gap-1 mt-0.5">
+            {post.organization && (
+              <>
+                <button
+                  onClick={() => navigate(`/profile?id=${post.authorId}`)}
+                  className="text-[13px] text-gray-600 font-medium hover:underline"
+                >
+                  Publicado por {post.author.name}
+                </button>
+                <span className="text-[13px] text-gray-300">·</span>
+              </>
+            )}
             <span className="text-[13px] text-gray-500">{formatTimeAgo(post.createdAt)}</span>
             <Globe className="w-3 h-3 text-gray-400" />
           </div>

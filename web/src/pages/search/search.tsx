@@ -1,7 +1,7 @@
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
-import type { User, Pet } from '../../types'
+import type { User, Pet, Organization } from '../../types'
 import { SPECIES_EMOJI, SPECIES_LABEL } from '../../types/constants'
 import { Avatar } from '../../components/ui/avatar'
 
@@ -28,6 +28,15 @@ export function SearchPage() {
     enabled: !!query,
   })
 
+  const { data: orgs, isLoading: orgsLoading } = useQuery<Organization[]>({
+    queryKey: ['org-search', query],
+    queryFn: async () => {
+      const { data } = await api.get('/organizations/search', { params: { q: query } })
+      return data
+    },
+    enabled: !!query,
+  })
+
   return (
     <div className="max-w-lg mx-auto">
       <h1 className="text-xl font-bold text-gray-900 mb-1">Pesquisar</h1>
@@ -35,7 +44,7 @@ export function SearchPage() {
         Resultados para: <strong>"{query}"</strong>
       </p>
 
-      {userLoading || petsLoading ? (
+      {userLoading || petsLoading || orgsLoading ? (
         <div className="text-center py-20 text-gray-400">Buscando...</div>
       ) : (
         <>
@@ -55,6 +64,31 @@ export function SearchPage() {
                       <p className="text-sm font-semibold text-gray-900 truncate">{u.name}</p>
                       <p className="text-xs text-gray-500 truncate">{u.email}</p>
                     </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {/* Organization results */}
+          {orgs?.length ? (
+            <>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Organizações</h2>
+              <div className="bg-card rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-200 mb-6">
+                {orgs.map((o) => (
+                  <button
+                    key={o.id}
+                    onClick={() => navigate(`/org/${o.slug}`)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <Avatar src={o.avatar} name={o.name} size="lg" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{o.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{o.city}{o.state ? `, ${o.state}` : ''}</p>
+                    </div>
+                    {o.verified && (
+                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full shrink-0">Verificada</span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -90,7 +124,7 @@ export function SearchPage() {
             </>
           ) : null}
 
-          {!userData?.users?.length && !pets?.length && (
+          {!userData?.users?.length && !orgs?.length && !pets?.length && (
             <div className="text-center py-20">
               <div className="text-5xl mb-4">🔍</div>
               <p className="text-gray-500">Nenhum resultado encontrado</p>

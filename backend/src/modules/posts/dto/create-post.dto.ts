@@ -21,4 +21,9 @@ export class CreatePostDto {
   @IsOptional()
   @IsUUID()
   petId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  organizationId?: string;
 }

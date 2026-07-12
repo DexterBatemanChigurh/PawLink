@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -14,6 +15,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { SharePostDto } from './dto/share-post.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Posts')
 @ApiBearerAuth()
@@ -31,6 +33,17 @@ export class PostsController {
   @ApiOperation({ summary: 'Posts de um usuário' })
   findByUser(@Param('userId', ParseUUIDPipe) userId: string) {
     return this.postsService.findByUser(userId);
+  }
+
+  @Public()
+  @Get('organization/:orgId')
+  @ApiOperation({ summary: 'Posts de uma organização' })
+  findByOrganization(
+    @Param('orgId', ParseUUIDPipe) orgId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.postsService.findByOrganization(orgId, Number(page) || 1, Number(limit) || 20);
   }
 
   @Patch(':id')

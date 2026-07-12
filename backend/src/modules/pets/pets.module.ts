@@ -4,9 +4,10 @@ import { PetsController } from './pets.controller';
 import { PetsService } from './pets.service';
 import { Pet } from './entities/pet.entity';
 import { UsersModule } from '../users/users.module';
+import { OrganizationsModule } from '../organizations/organizations.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Pet]), UsersModule],
+  imports: [TypeOrmModule.forFeature([Pet]), UsersModule, OrganizationsModule],
   controllers: [PetsController],
   providers: [PetsService],
   exports: [PetsService],

@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsBoolean,
   IsArray,
+  IsUUID,
   Min,
   Max,
 } from 'class-validator';
@@ -117,4 +118,9 @@ export class CreatePetDto {
   @IsOptional()
   @IsString()
   videoUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  organizationId?: string;
 }

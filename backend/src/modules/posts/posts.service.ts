@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Post, PostType } from './entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { HashtagsService } from '../hashtags/hashtags.service';
+import { OrganizationsService } from '../organizations/organizations.service';
 
 @Injectable()
 export class PostsService {
@@ -11,15 +12,27 @@ export class PostsService {
     @InjectRepository(Post)
     private postsRepository: Repository<Post>,
     private hashtagsService: HashtagsService,
+    private orgService: OrganizationsService,
   ) {}
 
   async create(dto: CreatePostDto, authorId: string): Promise<Post> {
+    if (dto.organizationId) {
+      const org = await this.orgService.findById(dto.organizationId);
+      if (org.ownerId !== authorId) {
+        throw new ForbiddenException('Você não é o proprietário desta organização');
+      }
+      if (org.status !== 'approved') {
+        throw new ConflictException('Organização precisa estar aprovada para publicar');
+      }
+    }
+
     const post = this.postsRepository.create();
     post.content = dto.content;
     post.authorId = authorId;
     post.type = dto.type || PostType.UPDATE;
     if (dto.media) post.media = dto.media;
     if (dto.petId) post.petId = dto.petId;
+    if (dto.organizationId) post.organizationId = dto.organizationId;
     const saved = await this.postsRepository.save(post);
     if (dto.content) {
       await this.hashtagsService.extractAndSave(dto.content, saved.id);
@@ -38,10 +51,24 @@ export class PostsService {
 
   async findByUser(userId: string): Promise<Post[]> {
     return this.postsRepository.find({
-      where: { authorId: userId },
-      relations: { sharedPost: { author: true, pet: true, sharedPost: { author: true, pet: true } } },
+      where: { authorId: userId, organizationId: IsNull() },
+      relations: {
+        organization: true,
+        sharedPost: { author: true, pet: true, sharedPost: { author: true, pet: true } },
+      },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findByOrganization(orgId: string, page = 1, limit = 20): Promise<{ posts: Post[]; total: number }> {
+    const [posts, total] = await this.postsRepository.findAndCount({
+      where: { organizationId: orgId },
+      relations: { sharedPost: { author: true, pet: true, sharedPost: { author: true, pet: true } } },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return { posts, total };
   }
 
   async update(id: string, userId: string, dto: CreatePostDto): Promise<Post> {
@@ -86,6 +113,7 @@ export class PostsService {
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.author', 'author')
       .leftJoinAndSelect('post.pet', 'pet')
+      .leftJoinAndSelect('post.organization', 'organization')
       .leftJoinAndSelect('post.sharedPost', 'sharedPost')
       .leftJoinAndSelect('sharedPost.author', 'sharedPostAuthor')
       .leftJoinAndSelect('sharedPost.pet', 'sharedPostPet');
@@ -96,12 +124,17 @@ export class PostsService {
           author.role IN (:...publicRoles)
           OR post.authorId IN (:...followedIds)
           OR post.authorId = :userId
+          OR post."organizationId" IS NOT NULL
         )`,
         { publicRoles, followedIds, userId },
       );
     } else {
       query.where(
-        `(author.role IN (:...publicRoles) OR post.authorId = :userId)`,
+        `(
+          author.role IN (:...publicRoles)
+          OR post.authorId = :userId
+          OR post."organizationId" IS NOT NULL
+        )`,
         { publicRoles, userId },
       );
     }

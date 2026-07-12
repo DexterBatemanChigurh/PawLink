@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/auth.store'
 import { useThemeStore } from '../../store/theme.store'
 import api from '../../services/api'
-import type { User, Conversation } from '../../types'
+import type { User, Conversation, Organization } from '../../types'
 import { NotificationsDropdown } from './notifications-dropdown'
 import { Avatar } from '../ui/avatar'
 import {
@@ -46,6 +46,7 @@ export function TopBar() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<User[]>([])
+  const [orgSearchResults, setOrgSearchResults] = useState<Organization[]>([])
   const [searching, setSearching] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -67,16 +68,22 @@ export function TopBar() {
 
     if (!value.trim()) {
       setSearchResults([])
+      setOrgSearchResults([])
       return
     }
 
     debounceRef.current = setTimeout(async () => {
       setSearching(true)
       try {
-        const { data } = await api.get('/users/search', { params: { q: value, limit: 5 } })
-        setSearchResults(data.users || [])
+        const [userRes, orgRes] = await Promise.all([
+          api.get('/users/search', { params: { q: value, limit: 5 } }),
+          api.get('/organizations/search', { params: { q: value } }),
+        ])
+        setSearchResults(userRes.data.users || [])
+        setOrgSearchResults(orgRes.data || [])
       } catch {
         setSearchResults([])
+        setOrgSearchResults([])
       } finally {
         setSearching(false)
       }
@@ -88,6 +95,7 @@ export function TopBar() {
       setSearchOpen(false)
       setSearchQuery('')
       setSearchResults([])
+      setOrgSearchResults([])
     }
     if (e.key === 'Enter' && searchQuery.trim()) {
       setSearchOpen(false)
@@ -99,7 +107,16 @@ export function TopBar() {
     setSearchOpen(false)
     setSearchQuery('')
     setSearchResults([])
+    setOrgSearchResults([])
     navigate(`/profile?id=${userId}`)
+  }
+
+  const handleSelectOrg = (slug: string) => {
+    setSearchOpen(false)
+    setSearchQuery('')
+    setSearchResults([])
+    setOrgSearchResults([])
+    navigate(`/org/${slug}`)
   }
 
   const openSearch = () => {
@@ -163,25 +180,51 @@ export function TopBar() {
                 <div className="max-h-80 overflow-y-auto">
                   {searching ? (
                     <div className="px-4 py-6 text-sm text-gray-400 text-center">Buscando...</div>
-                  ) : searchQuery && searchResults.length === 0 ? (
-                    <div className="px-4 py-6 text-sm text-gray-400 text-center">Nenhum usuário encontrado</div>
+                  ) : searchQuery && searchResults.length === 0 && orgSearchResults.length === 0 ? (
+                    <div className="px-4 py-6 text-sm text-gray-400 text-center">Nenhum resultado encontrado</div>
                   ) : searchQuery ? (
                     <div>
-                      {searchResults.map((u) => (
-                        <button
-                          key={u.id}
-                          onClick={() => handleSelectUser(u.id)}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
-                        >
-                          <Avatar src={u.avatar} name={u.name} size="sm" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 truncate">{u.name}</p>
-                            <p className="text-xs text-gray-500 truncate">{u.email}</p>
-                          </div>
-                        </button>
-                      ))}
+                      {searchResults.length > 0 && (
+                        <>
+                          <div className="px-4 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Usuários</div>
+                          {searchResults.map((u) => (
+                            <button
+                              key={u.id}
+                              onClick={() => handleSelectUser(u.id)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                            >
+                              <Avatar src={u.avatar} name={u.name} size="sm" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 truncate">{u.name}</p>
+                                <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </>
+                      )}
+                      {orgSearchResults.length > 0 && (
+                        <>
+                          <div className="px-4 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider border-t border-gray-100">Organizações</div>
+                          {orgSearchResults.map((o) => (
+                            <button
+                              key={o.id}
+                              onClick={() => handleSelectOrg(o.slug)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                            >
+                              <Avatar src={o.avatar} name={o.name} size="sm" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 truncate">{o.name}</p>
+                                <p className="text-xs text-gray-500 truncate">{o.city}{o.state ? `, ${o.state}` : ''}</p>
+                              </div>
+                              {o.verified && (
+                                <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full shrink-0">Verificada</span>
+                              )}
+                            </button>
+                          ))}
+                        </>
+                      )}
                       <button
-                        onClick={() => { setSearchOpen(false); navigate(`/search?q=${encodeURIComponent(searchQuery)}`) }}
+                        onClick={() => { setSearchOpen(false); setSearchQuery(''); setSearchResults([]); setOrgSearchResults([]); navigate(`/search?q=${encodeURIComponent(searchQuery)}`) }}
                         className="w-full px-4 py-2.5 text-sm text-primary font-semibold hover:bg-gray-50 border-t border-gray-100 transition-colors text-center"
                       >
                         Ver todos os resultados
@@ -189,7 +232,7 @@ export function TopBar() {
                     </div>
                   ) : (
                     <div className="px-4 py-6 text-sm text-gray-400 text-center">
-                      Digite o nome de uma pessoa
+                      Digite o nome de uma pessoa ou organização
                     </div>
                   )}
                 </div>

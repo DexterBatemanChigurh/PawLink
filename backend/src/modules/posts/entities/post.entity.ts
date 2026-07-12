@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Pet } from '../../pets/entities/pet.entity';
+import { Organization } from '../../organizations/entities/organization.entity';
 
 export enum PostType {
   TIP = 'tip',
@@ -49,6 +50,13 @@ export class Post {
   @ManyToOne(() => Pet, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'petId' })
   pet: Pet;
+
+  @Column({ nullable: true })
+  organizationId: string;
+
+  @ManyToOne(() => Organization, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'organizationId' })
+  organization: Organization;
 
   @Column({ nullable: true })
   sharedPostId: string;

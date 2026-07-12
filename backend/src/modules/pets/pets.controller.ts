@@ -143,6 +143,13 @@ export class PetsController {
     return this.petsService.findByOwner(id);
   }
 
+  @Public()
+  @Get('organization/:orgId')
+  @ApiOperation({ summary: 'Listar pets de uma organização' })
+  findByOrganization(@Param('orgId', ParseUUIDPipe) orgId: string) {
+    return this.petsService.findByOrganization(orgId);
+  }
+
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar pet' })

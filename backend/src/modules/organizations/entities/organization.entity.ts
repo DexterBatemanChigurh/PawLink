@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  AfterLoad,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
@@ -17,6 +18,12 @@ export enum OrganizationStatus {
 
 @Entity('organizations')
 export class Organization {
+  @AfterLoad()
+  autoVerify() {
+    if (this.status === OrganizationStatus.APPROVED) {
+      this.verified = true;
+    }
+  }
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

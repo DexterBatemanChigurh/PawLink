@@ -5,7 +5,8 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { Repository, EntityManager, ILike } from 'typeorm';
 import { Organization, OrganizationStatus } from './entities/organization.entity';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
@@ -24,6 +25,8 @@ export class OrganizationsService {
   constructor(
     @InjectRepository(Organization)
     private orgRepository: Repository<Organization>,
+    @InjectEntityManager()
+    private entityManager: EntityManager,
   ) {}
 
   async create(dto: CreateOrganizationDto, ownerId: string): Promise<Organization> {
@@ -94,12 +97,14 @@ export class OrganizationsService {
   async approve(id: string): Promise<Organization> {
     const org = await this.findById(id);
     org.status = OrganizationStatus.APPROVED;
+    org.verified = true;
     return this.orgRepository.save(org);
   }
 
   async reject(id: string): Promise<Organization> {
     const org = await this.findById(id);
     org.status = OrganizationStatus.REJECTED;
+    org.verified = false;
     return this.orgRepository.save(org);
   }
 
@@ -110,11 +115,34 @@ export class OrganizationsService {
     });
   }
 
+  async search(q: string): Promise<Organization[]> {
+    return this.orgRepository.find({
+      where: [
+        { name: ILike(`%${q}%`), status: OrganizationStatus.APPROVED },
+        { city: ILike(`%${q}%`), status: OrganizationStatus.APPROVED },
+      ],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async findPending(): Promise<Organization[]> {
     return this.orgRepository.find({
       where: { status: OrganizationStatus.PENDING },
       order: { createdAt: 'ASC' },
       relations: { owner: true },
+    });
+  }
+
+  async deleteWithCascade(id: string, userId: string): Promise<void> {
+    const org = await this.findById(id);
+    if (org.ownerId !== userId) {
+      throw new ForbiddenException('Apenas o proprietário pode excluir a organização');
+    }
+
+    await this.entityManager.transaction(async (tx) => {
+      await tx.query(`DELETE FROM posts WHERE "organizationId" = $1`, [id]);
+      await tx.query(`DELETE FROM pets WHERE "organizationId" = $1`, [id]);
+      await tx.query(`DELETE FROM organizations WHERE id = $1`, [id]);
     });
   }
 }

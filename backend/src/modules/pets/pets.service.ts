@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, ILike, IsNull, Not } from 'typeorm';
 import { Pet, PetSpecies, PetSize } from './entities/pet.entity';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
+import { OrganizationsService } from '../organizations/organizations.service';
 
 @Injectable()
 export class PetsService {
@@ -12,9 +13,19 @@ export class PetsService {
     @InjectRepository(Pet)
     private petsRepository: Repository<Pet>,
     private usersService: UsersService,
+    private orgService: OrganizationsService,
   ) {}
 
   async create(dto: CreatePetDto, ownerId: string): Promise<Pet> {
+    if (dto.organizationId) {
+      const org = await this.orgService.findById(dto.organizationId);
+      if (org.ownerId !== ownerId) {
+        throw new ForbiddenException('Você não é o proprietário desta organização');
+      }
+      if (org.status !== 'approved') {
+        throw new ConflictException('Organização precisa estar aprovada');
+      }
+    }
     const pet = this.petsRepository.create({
       ...dto,
       ownerId,
@@ -25,7 +36,7 @@ export class PetsService {
   async findById(id: string): Promise<Pet> {
     const pet = await this.petsRepository.findOne({
       where: { id },
-      relations: { owner: true },
+      relations: { owner: true, organization: true },
     });
     if (!pet) {
       throw new NotFoundException('Pet não encontrado');
@@ -57,7 +68,7 @@ export class PetsService {
 
     const [pets, total] = await this.petsRepository.findAndCount({
       where,
-      relations: { owner: true },
+      relations: { owner: true, organization: true },
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },
@@ -110,7 +121,7 @@ export class PetsService {
 
     const [pets, total] = await this.petsRepository.findAndCount({
       where,
-      relations: { owner: true },
+      relations: { owner: true, organization: true },
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },
@@ -125,7 +136,7 @@ export class PetsService {
     } catch {
       return this.petsRepository.find({
         where: { deletedAt: IsNull(), available: true },
-        relations: { owner: true },
+        relations: { owner: true, organization: true },
         order: { createdAt: 'DESC' },
         take: limit,
       });
@@ -139,7 +150,7 @@ export class PetsService {
 
     return this.petsRepository.find({
       where,
-      relations: { owner: true },
+      relations: { owner: true, organization: true },
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -148,6 +159,14 @@ export class PetsService {
   async findByOwner(ownerId: string): Promise<Pet[]> {
     return this.petsRepository.find({
       where: { ownerId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByOrganization(orgId: string): Promise<Pet[]> {
+    return this.petsRepository.find({
+      where: { organizationId: orgId },
+      relations: { owner: true, organization: true },
       order: { createdAt: 'DESC' },
     });
   }

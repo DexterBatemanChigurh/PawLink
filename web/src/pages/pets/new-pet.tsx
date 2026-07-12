@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import { FileUpload } from '../../components/ui/file-upload'
 import { uploadMultiple } from '../../services/upload'
 import { useToastStore } from '../../store/toast.store'
-import { Save } from 'lucide-react'
+import type { Organization } from '../../types'
+import { Save, Building2 } from 'lucide-react'
 
 export function NewPetPage() {
   const navigate = useNavigate()
   const toast = useToastStore()
   const [photos, setPhotos] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
+  const [asOrg, setAsOrg] = useState(false)
   const [form, setForm] = useState({
     name: '',
     species: 'dog',
@@ -28,6 +30,14 @@ export function NewPetPage() {
     state: '',
   })
 
+  const { data: myOrg } = useQuery<Organization>({
+    queryKey: ['my-organization'],
+    queryFn: async () => {
+      const { data } = await api.get('/organizations/my')
+      return data
+    },
+  })
+
   const mutation = useMutation({
     mutationFn: async () => {
       setUploading(true)
@@ -35,10 +45,13 @@ export function NewPetPage() {
       if (photos.length > 0) {
         photoUrls = await uploadMultiple(photos, '/upload')
       }
-      const payload = {
+      const payload: Record<string, any> = {
         ...form,
         age: form.age ? Number(form.age) : undefined,
         photos: photoUrls,
+      }
+      if (asOrg && myOrg?.status === 'approved') {
+        payload.organizationId = myOrg.id
       }
       await api.post('/pets', payload)
     },
@@ -230,6 +243,21 @@ export function NewPetPage() {
           <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-lg">
             Erro ao cadastrar. Verifique os dados e tente novamente.
           </div>
+        )}
+
+        {myOrg?.status === 'approved' && (
+          <button
+            type="button"
+            onClick={() => setAsOrg(!asOrg)}
+            className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
+              asOrg
+                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            {asOrg ? `Cadastrando como ${myOrg.name}` : 'Cadastrar como ONG'}
+          </button>
         )}
 
         <button

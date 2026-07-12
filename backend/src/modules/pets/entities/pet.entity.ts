@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { Organization } from '../../organizations/entities/organization.entity';
 
 export enum PetSpecies {
   DOG = 'dog',
@@ -125,6 +126,13 @@ export class Pet {
 
   @Column()
   ownerId: string;
+
+  @Column({ nullable: true })
+  organizationId: string;
+
+  @ManyToOne(() => Organization, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'organizationId' })
+  organization: Organization;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;

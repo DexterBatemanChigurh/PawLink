@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEnum, IsNumber, IsBoolean, IsArray, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsNumber, IsBoolean, IsArray, IsUUID, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PetSpecies, PetSize } from '../entities/pet.entity';
 
@@ -110,4 +110,9 @@ export class UpdatePetDto {
   @IsOptional()
   @IsString()
   videoUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  organizationId?: string;
 }

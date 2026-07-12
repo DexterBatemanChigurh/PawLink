@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/auth.store'
 import { useToastStore } from '../../store/toast.store'
-import type { Post, PostFeed } from '../../types'
+import type { Post, PostFeed, Organization } from '../../types'
 import { PostCard } from '../../components/posts/post-card'
 import { PostSkeleton } from '../../components/ui/skeleton'
 import { EmptyState } from '../../components/ui/empty-state'
 import { FileUpload } from '../../components/ui/file-upload'
 import { Avatar } from '../../components/ui/avatar'
 import { uploadFile } from '../../services/upload'
-import { Image, X } from 'lucide-react'
+import { Image, X, Building2 } from 'lucide-react'
 
 export function FeedPage() {
   const { user } = useAuthStore()
@@ -23,6 +23,15 @@ export function FeedPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploading, setUploading] = useState(false)
+  const [postAsOrg, setPostAsOrg] = useState(false)
+
+  const { data: myOrg } = useQuery<Organization>({
+    queryKey: ['my-organization'],
+    queryFn: async () => {
+      const { data } = await api.get('/organizations/my')
+      return data
+    },
+  })
 
   const {
     data,
@@ -83,11 +92,16 @@ export function FeedPage() {
       if (postMedia) {
         mediaUrl = await uploadFile(postMedia, '/upload', setUploadProgress)
       }
-      await api.post('/posts', { content: content.trim(), media: mediaUrl ? [mediaUrl] : undefined })
+      const payload: Record<string, any> = { content: content.trim(), media: mediaUrl ? [mediaUrl] : undefined }
+      if (postAsOrg && myOrg?.status === 'approved') {
+        payload.organizationId = myOrg.id
+      }
+      await api.post('/posts', payload)
       setContent('')
       setShowCreate(false)
       setPostMedia(null)
       setPostPreview(null)
+      setPostAsOrg(false)
       setUploadProgress(0)
       queryClient.invalidateQueries({ queryKey: ['feed'] })
       toast.add('Post publicado com sucesso!', 'success')
@@ -144,10 +158,24 @@ export function FeedPage() {
               </div>
             )}
             <FileUpload onFilesSelected={handleFilesSelected} maxFiles={1} />
+            {myOrg?.status === 'approved' && (
+              <button
+                type="button"
+                onClick={() => setPostAsOrg(!postAsOrg)}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  postAsOrg
+                    ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                    : 'text-gray-500 hover:bg-gray-100 border border-transparent'
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                {postAsOrg ? `Publicando como ${myOrg.name}` : 'Publicar como ONG'}
+              </button>
+            )}
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setShowCreate(false); setContent(''); setPostMedia(null); setPostPreview(null) }}
+                  onClick={() => { setShowCreate(false); setContent(''); setPostMedia(null); setPostPreview(null); setPostAsOrg(false) }}
                   className="px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   Cancelar

@@ -7,7 +7,7 @@ import { useConfirmStore } from '../../store/confirm.store'
 import { PetCardSkeleton } from '../../components/ui/skeleton'
 import { QueryState } from '../../components/ui/query-state'
 import type { Pet, TimelineEvent } from '../../types'
-import { Heart, Pencil, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Heart, Pencil, Trash2, AlertTriangle, ChevronLeft, ChevronRight, Building2 } from 'lucide-react'
 import { Lightbox } from '../../components/ui/lightbox'
 import { SPECIES_EMOJI, SPECIES_LABEL } from '../../types/constants'
 
@@ -227,6 +227,15 @@ export function PetDetailPage() {
             {pet.city && <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm">📍 {pet.city}{pet.state ? `, ${pet.state}` : ''}</span>}
             {pet.castrated && <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm">Castrado</span>}
             {pet.vaccinated && <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm">Vacinado</span>}
+            {pet.organization && (
+              <button
+                onClick={() => navigate(`/org/${pet.organization.slug}`)}
+                className="inline-flex items-center gap-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-3 py-1 rounded-full text-sm hover:bg-purple-100 transition-colors"
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                {pet.organization.name}
+              </button>
+            )}
           </div>
 
           {pet.temperament && (

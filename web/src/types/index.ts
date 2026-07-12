@@ -55,6 +55,8 @@ export interface Pet {
   available: boolean
   ownerId: string
   owner?: User
+  organizationId?: string
+  organization?: Organization
   createdAt: string
 }
 
@@ -120,6 +122,8 @@ export interface Post {
   type: PostType
   petId?: string
   pet?: Pet
+  organizationId?: string
+  organization?: Organization
   sharedPostId?: string
   sharedPost?: Post
   commentCount?: number

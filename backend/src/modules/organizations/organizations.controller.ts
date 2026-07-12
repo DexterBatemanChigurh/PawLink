@@ -3,8 +3,10 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
+  Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -13,6 +15,7 @@ import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Organizations')
 @ApiBearerAuth()
@@ -24,6 +27,13 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Criar organização' })
   create(@Body() dto: CreateOrganizationDto, @CurrentUser() user: User) {
     return this.orgService.create(dto, user.id);
+  }
+
+  @Public()
+  @Get('search')
+  @ApiOperation({ summary: 'Buscar organizações' })
+  search(@Query('q') q: string) {
+    return this.orgService.search(q);
   }
 
   @Get('my')
@@ -38,18 +48,21 @@ export class OrganizationsController {
     return this.orgService.findPending();
   }
 
+  @Public()
   @Get('slug/:slug')
   @ApiOperation({ summary: 'Obter organização por slug' })
   findBySlug(@Param('slug') slug: string) {
     return this.orgService.findBySlug(slug);
   }
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Listar todas as organizações' })
   findAll() {
     return this.orgService.findAll();
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Obter organização por ID' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
@@ -64,6 +77,12 @@ export class OrganizationsController {
     @CurrentUser() user: User,
   ) {
     return this.orgService.update(id, dto, user.id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Excluir organização em cascata (posts + pets)' })
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    return this.orgService.deleteWithCascade(id, user.id);
   }
 
   @Post(':id/approve')
