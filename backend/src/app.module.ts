@@ -29,6 +29,7 @@ import { PushSubscriptionsModule } from './modules/push-subscriptions/push-subsc
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
 import { HashtagsModule } from './modules/hashtags/hashtags.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
 
 @Module({
   imports: [
@@ -91,6 +92,7 @@ import { HashtagsModule } from './modules/hashtags/hashtags.module';
     FavoritesModule,
     BookmarksModule,
     HashtagsModule,
+    OrganizationsModule,
   ],
   providers: [
     {

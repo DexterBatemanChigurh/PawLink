@@ -21,6 +21,8 @@ import { SearchPage } from './pages/search/search'
 import { SettingsPage } from './pages/settings/settings'
 import { SavedPostsPage } from './pages/posts/saved-posts'
 import { HashtagPostsPage } from './pages/hashtags/hashtag-posts'
+import { CreateOrgPage } from './pages/organizations/create-org'
+import { OrgProfilePage } from './pages/organizations/org-profile'
 
 import { ToastContainer } from './components/ui/toast'
 import { ConfirmDialog } from './components/ui/confirm-dialog'
@@ -116,6 +118,8 @@ export default function App() {
             <Route path="/search" element={<ErrorBoundary><SearchPage /></ErrorBoundary>} />
             <Route path="/saved" element={<ErrorBoundary><SavedPostsPage /></ErrorBoundary>} />
             <Route path="/hashtags/:name" element={<ErrorBoundary><HashtagPostsPage /></ErrorBoundary>} />
+            <Route path="/organizations/new" element={<ErrorBoundary><CreateOrgPage /></ErrorBoundary>} />
+            <Route path="/org/:slug" element={<ErrorBoundary><OrgProfilePage /></ErrorBoundary>} />
           </Route>
           <Route path="/settings" element={<ProtectedRoute><ErrorBoundary><SettingsPage /></ErrorBoundary></ProtectedRoute>} />
 

@@ -1,7 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/auth.store'
+import api from '../../services/api'
 import { Avatar } from '../ui/avatar'
-import { PawPrint, Home, MessageCircle, Search, ClipboardList } from 'lucide-react'
+import { PawPrint, Home, MessageCircle, Search, ClipboardList, Building2 } from 'lucide-react'
+import type { Organization } from '../../types'
 
 const LINKS = [
   { path: '/', icon: Home, label: 'Feed' },
@@ -14,6 +17,14 @@ export function LeftSidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuthStore()
+
+  const { data: myOrg } = useQuery<Organization>({
+    queryKey: ['my-organization'],
+    queryFn: async () => {
+      const { data } = await api.get('/organizations/my')
+      return data
+    },
+  })
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/'
@@ -63,6 +74,21 @@ export function LeftSidebar() {
         <div className="border-t border-gray-300 my-3 pt-3">
           <p className="text-xs font-semibold text-gray-500 uppercase px-3 mb-2">Atalhos</p>
           <div className="space-y-0.5">
+            <button
+              onClick={() => {
+                if (myOrg) {
+                  navigate(`/org/${myOrg.slug}`)
+                } else {
+                  navigate('/organizations/new')
+                }
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              <div className="w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              </div>
+              {myOrg ? 'Minha Organização' : 'Criar Organização'}
+            </button>
             <button
               onClick={() => navigate('/matches/received')}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"

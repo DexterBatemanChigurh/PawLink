@@ -1,3 +1,24 @@
+export interface Organization {
+  id: string
+  name: string
+  slug: string
+  avatar?: string
+  coverPhoto?: string
+  description?: string
+  mission?: string
+  cnpj: string
+  email?: string
+  phone?: string
+  website?: string
+  city?: string
+  state?: string
+  status: 'pending' | 'approved' | 'rejected'
+  verified: boolean
+  ownerId: string
+  owner?: User
+  createdAt: string
+}
+
 export interface User {
   id: string
   email: string
