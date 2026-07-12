@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 import { Check, X } from 'lucide-react'
-import { useToastStore } from '../../store/toast.store'
 
 interface Organization {
   id: string
@@ -20,7 +19,6 @@ interface Organization {
 
 export function OrganizationsPage() {
   const queryClient = useQueryClient()
-  const toast = useToastStore()
 
   const { data: orgs, isLoading } = useQuery<Organization[]>({
     queryKey: ['admin-organizations'],
@@ -36,10 +34,8 @@ export function OrganizationsPage() {
       await api.post(`/organizations/${id}/approve`)
     },
     onSuccess: () => {
-      toast.add('Organização aprovada', 'success')
       queryClient.invalidateQueries({ queryKey: ['admin-organizations'] })
     },
-    onError: () => toast.add('Erro ao aprovar', 'error'),
   })
 
   const rejectMutation = useMutation({
@@ -47,10 +43,8 @@ export function OrganizationsPage() {
       await api.post(`/organizations/${id}/reject`)
     },
     onSuccess: () => {
-      toast.add('Organização rejeitada', 'success')
       queryClient.invalidateQueries({ queryKey: ['admin-organizations'] })
     },
-    onError: () => toast.add('Erro ao rejeitar', 'error'),
   })
 
   const pending = orgs?.filter(o => o.status === 'pending') || []
