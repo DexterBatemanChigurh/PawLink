@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
-import { Skeleton } from '../../components/ui/skeleton'
-import { Check, X, ExternalLink } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { useToastStore } from '../../store/toast.store'
 
 interface Organization {
@@ -63,7 +62,9 @@ export function OrganizationsPage() {
 
       {isLoading ? (
         <div className="space-y-4">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-28 w-full rounded-lg" />)}
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-28 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+          ))}
         </div>
       ) : !orgs?.length ? (
         <div className="text-center py-12 text-gray-400">
