@@ -311,7 +311,7 @@ export function ProfilePage() {
                   )}
                 </button>
                 <button
-                  onClick={() => navigate(`/messages/${targetId}`)}
+                  onClick={() => navigate('/messages')}
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold text-gray-700 transition-colors flex items-center gap-1.5"
                 >
                   <MessageCircle className="w-4 h-4" />
