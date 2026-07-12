@@ -26,12 +26,24 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Public()
+  @ApiBearerAuth()
   @Post()
-  @ApiOperation({ summary: 'Criar novo usuário' })
-  async create(@Body() createUserDto: CreateUserDto) {
-    const user = await this.usersService.create(createUserDto);
-    return this.usersService.sanitizeUser(user);
+  @ApiOperation({ summary: 'Criar novo usuário (admin)' })
+  async create(
+    @Body() createUserDto: CreateUserDto,
+    @Body('role') role: string,
+    @Body('status') status: UserStatus,
+    @CurrentUser() user: User,
+  ) {
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('Apenas administradores podem criar usuários diretamente');
+    }
+    const created = await this.usersService.create(createUserDto, role || 'user');
+    if (status) {
+      await this.usersService.update(created.id, { status });
+      created.status = status;
+    }
+    return this.usersService.sanitizeUser(created);
   }
 
   @Get()

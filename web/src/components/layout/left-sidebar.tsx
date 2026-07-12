@@ -6,7 +6,7 @@ import { PawPrint, Home, MessageCircle, Search, ClipboardList } from 'lucide-rea
 const LINKS = [
   { path: '/', icon: Home, label: 'Feed' },
   { path: '/explorar', icon: Search, label: 'Encontrar Pets' },
-  { path: '/conversations', icon: MessageCircle, label: 'Conversas' },
+  { path: '/messages', icon: MessageCircle, label: 'Conversas' },
   { path: '/my-pets', icon: PawPrint, label: 'Meus Pets' },
 ]
 

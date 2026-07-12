@@ -48,7 +48,7 @@ export function MyMatchesPage() {
         empty={<EmptyState icon={Heart} title="Nenhum interesse" description="Você ainda não fez nenhum pedido de adoção" />}
       >
         <div className="space-y-3">
-          {matches.map((match) => (
+          {matches?.map((match) => (
             <div key={match.id} className="bg-card rounded-lg shadow-sm border border-gray-200 p-4">
               <div className="flex items-start justify-between mb-2">
                 <div>

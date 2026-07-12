@@ -23,12 +23,22 @@ export class ReportsController {
 
   @Post('users/:id/report')
   @ApiOperation({ summary: 'Denunciar usuário' })
-  report(
+  reportUser(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateReportDto,
     @CurrentUser() user: User,
   ) {
     return this.reportsService.create(user.id, id, dto);
+  }
+
+  @Post('posts/:id/report')
+  @ApiOperation({ summary: 'Denunciar post' })
+  reportPost(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateReportDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.reportsService.createForPost(user.id, id, dto);
   }
 
   @Get('admin/reports')

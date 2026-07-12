@@ -229,7 +229,7 @@ export function TopBar() {
           </button>
 
           <button
-            onClick={() => navigate('/conversations')}
+            onClick={() => navigate('/messages')}
             className="relative w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
             title="Mensagens"
           >

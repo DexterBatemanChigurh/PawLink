@@ -34,4 +34,14 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

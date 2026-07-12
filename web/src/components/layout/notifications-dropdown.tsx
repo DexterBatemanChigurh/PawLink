@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Bell, UserPlus, Heart, MessageCircle, CheckCheck } from 'lucide-react'
+import { Bell, UserPlus, Heart, MessageCircle, CheckCheck, Flag } from 'lucide-react'
 import api from '../../services/api'
 import type { Notification } from '../../types'
 
@@ -12,6 +12,7 @@ const typeIcons: Record<string, typeof Heart> = {
   match_request: MessageCircle,
   match_accepted: CheckCheck,
   match_adopted: Heart,
+  report: Flag,
 }
 
 const typeColors: Record<string, string> = {
@@ -21,6 +22,7 @@ const typeColors: Record<string, string> = {
   match_request: 'text-purple-500 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30',
   match_accepted: 'text-emerald-500 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30',
   match_adopted: 'text-rose-500 bg-rose-100 dark:text-rose-400 dark:bg-rose-900/30',
+  report: 'text-orange-500 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30',
 }
 
 export function NotificationsDropdown() {
@@ -123,8 +125,9 @@ export function NotificationsDropdown() {
                     onClick={() => {
                       if (!n.read) readMutation.mutate(n.id)
                       if (n.referenceType === 'post') navigate(`/`)
-                      else if (n.referenceType === 'match') navigate('/conversations')
+                      else if (n.referenceType === 'match') navigate('/messages')
                       else if (n.referenceType === 'user') navigate(`/profile?id=${n.referenceId}`)
+                      else if (n.referenceType === 'report') window.open('http://localhost:3001/reports', '_blank')
                       setOpen(false)
                     }}
                     className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${!n.read ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''}`}

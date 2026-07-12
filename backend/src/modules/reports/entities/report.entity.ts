@@ -7,6 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { Post } from '../../posts/entities/post.entity';
 
 @Entity('reports')
 export class Report {
@@ -26,6 +27,13 @@ export class Report {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'reportedUserId' })
   reportedUser: User;
+
+  @Column({ nullable: true })
+  reportedPostId: string;
+
+  @ManyToOne(() => Post, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'reportedPostId' })
+  reportedPost: Post;
 
   @Column()
   reason: string;

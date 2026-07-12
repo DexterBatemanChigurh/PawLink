@@ -35,16 +35,6 @@ export function EditUserPage() {
     },
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await api.delete(`/users/${id}`)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      navigate('/users')
-    },
-  })
-
   if (isLoading) return <div className="text-gray-500">Carregando...</div>
   if (!user) return <div className="text-gray-500">Usuário não encontrado</div>
 
@@ -55,18 +45,7 @@ export function EditUserPage() {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Editar Usuário</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/users')}>Voltar</Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              if (window.confirm(`Tem certeza que deseja excluir ${user.name}? Isso vai deletar todos os pets, matches e eventos de timeline associados.`))
-                deleteMutation.mutate()
-            }}
-          >
-            Excluir Usuário
-          </Button>
-        </div>
+        <Button variant="outline" onClick={() => navigate('/users')}>Voltar</Button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">

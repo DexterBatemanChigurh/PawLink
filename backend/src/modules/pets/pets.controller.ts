@@ -136,6 +136,13 @@ export class PetsController {
     return this.petsService.findByOwner(user.id);
   }
 
+  @Get('owner/:id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar pets de um usuário' })
+  findByOwner(@Param('id', ParseUUIDPipe) id: string) {
+    return this.petsService.findByOwner(id);
+  }
+
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar pet' })

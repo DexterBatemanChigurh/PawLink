@@ -22,6 +22,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException();
     }
+    if (user.status === 'blocked') {
+      throw new UnauthorizedException('Sua conta foi suspensa');
+    }
     return user;
   }
 }

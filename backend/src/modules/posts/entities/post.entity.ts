@@ -57,6 +57,12 @@ export class Post {
   @JoinColumn({ name: 'sharedPostId' })
   sharedPost: Post;
 
+  @Column({ select: false, insert: false, update: false, nullable: true })
+  commentCount: number;
+
+  @Column({ select: false, insert: false, update: false, nullable: true })
+  sharesCount: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

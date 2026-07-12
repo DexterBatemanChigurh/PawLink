@@ -122,7 +122,7 @@ export function MessengerPopup() {
 
           {/* Footer */}
           <button
-            onClick={() => { navigate('/conversations'); setOpen(false) }}
+            onClick={() => { navigate('/messages'); setOpen(false) }}
             className="w-full px-4 py-2.5 text-sm font-semibold text-primary border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Ver todas no Messenger

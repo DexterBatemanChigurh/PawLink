@@ -12,6 +12,7 @@ import { PetsPage } from './pages/pets/pets'
 import { PetDetailPage } from './pages/pets/pet-detail'
 import { EditPetPage } from './pages/pets/edit-pet'
 import { MatchesPage } from './pages/matches/matches'
+import { ReportsPage } from './pages/reports/reports'
 import { useEffect } from 'react'
 
 const queryClient = new QueryClient()
@@ -65,7 +66,7 @@ function App() {
             <Route path="pets/:id/edit" element={<EditPetPage />} />
             <Route path="matches" element={<MatchesPage />} />
             <Route path="organizations" element={<div>ONGs</div>} />
-            <Route path="reports" element={<div>Denúncias</div>} />
+            <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<div>Configurações</div>} />
           </Route>
         </Routes>

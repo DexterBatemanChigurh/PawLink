@@ -58,7 +58,7 @@ export function MyPetsPage() {
         empty={<EmptyState icon={PawPrint} title="Nenhum pet cadastrado" description="Você ainda não cadastrou nenhum pet. Que tal adicionar o primeiro?" action={{ label: 'Cadastrar pet', onClick: () => navigate('/pets/new') }} />}
       >
         <div className="space-y-3">
-          {pets.map((pet) => (
+          {pets?.map((pet) => (
             <div key={pet.id} className="relative group">
               <button
                 onClick={() => navigate(`/pets/${pet.id}`)}

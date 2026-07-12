@@ -24,10 +24,11 @@ export class UsersService {
       throw new ConflictException('Email já cadastrado');
     }
 
+    const { role: dtoRole, status: dtoStatus, ...rest } = createUserDto;
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const user = this.usersRepository.create({
-      ...createUserDto,
-      role: (role ?? 'user') as UserRole,
+      ...rest,
+      role: (role ?? dtoRole ?? 'user') as UserRole,
       password: hashedPassword,
     });
 
@@ -144,6 +145,9 @@ export class UsersService {
   async updateStatus(id: string, status: UserStatus): Promise<User> {
     const user = await this.findById(id);
     user.status = status;
+    if (status === UserStatus.BLOCKED) {
+      user.refreshToken = '';
+    }
     return this.usersRepository.save(user);
   }
 

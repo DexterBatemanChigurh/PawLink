@@ -29,6 +29,10 @@ export function NewUserPage() {
     },
   })
 
+  const serverError = createMutation.error as any;
+  const rawMsg = serverError?.response?.data?.message;
+  const errorMessage = Array.isArray(rawMsg) ? rawMsg[0] : rawMsg || 'Erro ao criar usuário. Verifique os dados e tente novamente.';
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -87,7 +91,7 @@ export function NewUserPage() {
 
         {createMutation.isError && (
           <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-lg">
-            Erro ao criar usuário. Verifique os dados e tente novamente.
+            {errorMessage}
           </div>
         )}
 

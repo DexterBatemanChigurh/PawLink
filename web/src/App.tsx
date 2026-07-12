@@ -16,16 +16,12 @@ import { MyPetsPage } from './pages/pets/my-pets'
 import { MyFavoritesPage } from './pages/pets/my-favorites'
 import { NewPetPage } from './pages/pets/new-pet'
 import { EditPetPage } from './pages/pets/edit-pet'
-import { ConversationsPage } from './pages/messages/conversations'
-import { ChatPage } from './pages/messages/chat'
+import { MessagesPage } from './pages/messages/messages'
 import { SearchPage } from './pages/search/search'
 import { SettingsPage } from './pages/settings/settings'
 import { SavedPostsPage } from './pages/posts/saved-posts'
 import { HashtagPostsPage } from './pages/hashtags/hashtag-posts'
-import { AdminLayout } from './pages/admin/admin-layout'
-import { AdminDashboard } from './pages/admin/admin-dashboard'
-import { AdminReports } from './pages/admin/admin-reports'
-import { AdminUsersPage } from './pages/admin/admin-users'
+
 import { ToastContainer } from './components/ui/toast'
 import { ConfirmDialog } from './components/ui/confirm-dialog'
 import { Onboarding } from './components/ui/onboarding'
@@ -48,24 +44,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
-  }
-
-  return <>{children}</>
-}
-
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, isLoading } = useAuthStore()
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-400">Carregando...</div>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated || user?.role !== 'admin') {
     return <Navigate to="/login" replace />
   }
 
@@ -133,19 +111,14 @@ export default function App() {
             <Route path="/my-favorites" element={<ErrorBoundary><MyFavoritesPage /></ErrorBoundary>} />
             <Route path="/pets/new" element={<ErrorBoundary><NewPetPage /></ErrorBoundary>} />
             <Route path="/pets/:id/edit" element={<ErrorBoundary><EditPetPage /></ErrorBoundary>} />
-            <Route path="/conversations" element={<ErrorBoundary><ConversationsPage /></ErrorBoundary>} />
+            <Route path="/messages" element={<ErrorBoundary><MessagesPage /></ErrorBoundary>} />
+            <Route path="/messages/:matchId" element={<ErrorBoundary><MessagesPage /></ErrorBoundary>} />
             <Route path="/search" element={<ErrorBoundary><SearchPage /></ErrorBoundary>} />
             <Route path="/saved" element={<ErrorBoundary><SavedPostsPage /></ErrorBoundary>} />
             <Route path="/hashtags/:name" element={<ErrorBoundary><HashtagPostsPage /></ErrorBoundary>} />
-            <Route path="/messages/:matchId" element={<ErrorBoundary><ChatPage /></ErrorBoundary>} />
           </Route>
           <Route path="/settings" element={<ProtectedRoute><ErrorBoundary><SettingsPage /></ErrorBoundary></ProtectedRoute>} />
-          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<ErrorBoundary><AdminDashboard /></ErrorBoundary>} />
-            <Route path="reports" element={<ErrorBoundary><AdminReports /></ErrorBoundary>} />
-            <Route path="users" element={<ErrorBoundary><AdminUsersPage /></ErrorBoundary>} />
-          </Route>
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <ToastContainer />

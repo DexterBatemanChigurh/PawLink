@@ -1,13 +1,24 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Trash2 } from 'lucide-react'
 import api from '../../services/api'
 import { Button } from '../../components/ui/button'
 import type { User } from '../../types'
 
 export function UsersPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/users/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
 
   const { data, isLoading } = useQuery({
     queryKey: ['users', search],
@@ -100,7 +111,22 @@ export function UsersPage() {
                   {new Date(user.createdAt).toLocaleDateString('pt-BR')}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <Button variant="ghost" size="sm" onClick={() => navigate(`/users/${user.id}/edit`)}>Editar</Button>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => navigate(`/users/${user.id}/edit`)}>Editar</Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (window.confirm(`Excluir ${user.name}? Esta ação não pode ser desfeita.`))
+                          deleteMutation.mutate(user.id)
+                      }}
+                      disabled={deleteMutation.isPending}
+                      className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900/30"
+                      title="Excluir usuário"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}

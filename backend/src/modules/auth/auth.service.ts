@@ -38,6 +38,10 @@ export class AuthService {
       throw new UnauthorizedException('Email ou senha inválidos');
     }
 
+    if (user.status === 'blocked') {
+      throw new UnauthorizedException('Sua conta foi suspensa');
+    }
+
     const tokens = await this.generateTokens(user);
     return { user: this.usersService.sanitizeUser(user), ...tokens };
   }
@@ -99,6 +103,10 @@ export class AuthService {
 
       if (user.refreshToken !== token) {
         throw new UnauthorizedException('Refresh token inválido');
+      }
+
+      if (user.status === 'blocked') {
+        throw new UnauthorizedException('Sua conta foi suspensa');
       }
 
       return this.generateTokens(user);

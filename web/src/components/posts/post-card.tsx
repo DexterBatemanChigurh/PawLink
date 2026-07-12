@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Heart, MessageCircle, Share2, Megaphone, Calendar, Home, Stethoscope, MoreHorizontal, Pencil, Trash2, Bookmark, Globe, Flag } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Megaphone, Calendar, Home, Stethoscope, MoreHorizontal, Pencil, Trash2, Bookmark, Globe, Flag, X } from 'lucide-react'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/auth.store'
 import { useConfirmStore } from '../../store/confirm.store'
+import { useToastStore } from '../../store/toast.store'
 import type { Post, ReactionCounts, ReactionType } from '../../types'
 import { ReactionsPopup, ReactionIcon } from './reactions-popup'
 import { CommentsSection } from './comments-section'
@@ -46,8 +47,11 @@ export function PostCard({ post }: PostCardProps) {
   const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState('')
   const [showMenu, setShowMenu] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportReason, setReportReason] = useState('')
   const likeRef = useRef<HTMLButtonElement>(null)
   const isAuthor = user?.id === post.authorId
+  const toast = useToastStore()
 
   const { data: reactions } = useQuery<ReactionCounts>({
     queryKey: ['reactions', post.id],
@@ -105,6 +109,20 @@ export function PostCard({ post }: PostCardProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] })
       queryClient.invalidateQueries({ queryKey: ['user-posts'] })
+    },
+  })
+
+  const reportMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      await api.post(`/posts/${post.id}/report`, { reason, description: reason })
+    },
+    onSuccess: () => {
+      toast.add('Denúncia enviada com sucesso', 'success')
+      setShowReportModal(false)
+      setReportReason('')
+    },
+    onError: () => {
+      toast.add('Erro ao enviar denúncia', 'error')
     },
   })
 
@@ -190,7 +208,7 @@ export function PostCard({ post }: PostCardProps) {
                       {isBookmarked ? 'Remover dos salvos' : 'Salvar post'}
                     </button>
                     <button
-                      onClick={() => { setShowMenu(false) }}
+                      onClick={() => { setShowMenu(false); setShowReportModal(true) }}
                       className="w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
                     >
                       <Flag className="w-4 h-4" /> Denunciar post
@@ -313,7 +331,7 @@ export function PostCard({ post }: PostCardProps) {
         </div>
       )}
 
-      {/* Stats bar - Facebook style (reactions left, counts right) */}
+      {/* Stats bar - display only, shows counts when > 0 */}
       <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-500">
         <div className="flex items-center gap-1.5">
           {topReaction && totalReactions > 0 && (
@@ -323,29 +341,27 @@ export function PostCard({ post }: PostCardProps) {
             </>
           )}
         </div>
-        <div className="flex items-center gap-3 text-[15px]">
-          <button
-            onClick={() => setShowComments(!showComments)}
-            className="hover:underline focus:outline-none"
-          >
-            Comentários
-          </button>
-          <button
-            onClick={() => setShowShare(true)}
-            className="hover:underline focus:outline-none"
-          >
-            Compartilhamentos
-          </button>
-        </div>
+        {(post.commentCount ?? 0) > 0 || (post.sharesCount ?? 0) > 0 ? (
+          <div className="flex items-center gap-3 text-[15px]">
+            {(post.commentCount ?? 0) > 0 && (
+              <span>{post.commentCount} comentário{(post.commentCount ?? 0) !== 1 ? 's' : ''}</span>
+            )}
+            {(post.sharesCount ?? 0) > 0 && (
+              <span>{post.sharesCount} compartilhamento{(post.sharesCount ?? 0) !== 1 ? 's' : ''}</span>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* Action bar - Facebook style: Like | Comment | Share */}
       <div className="flex items-center border-t border-b border-gray-100 mx-4 py-0.5">
-        <div className="relative flex-1">
+        <div
+          className="relative flex-1"
+          onMouseEnter={() => setShowReactions(true)}
+          onMouseLeave={() => setShowReactions(false)}
+        >
           <button
             ref={likeRef}
-            onMouseEnter={() => setShowReactions(true)}
-            onMouseLeave={() => setShowReactions(false)}
             onClick={() => {
               if (userReaction) {
                 reactMutation.mutate(userReaction)
@@ -392,6 +408,46 @@ export function PostCard({ post }: PostCardProps) {
       {showComments && <CommentsSection postId={post.id} />}
 
       {showShare && <ShareModal post={post} onClose={() => setShowShare(false)} />}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { setShowReportModal(false); setReportReason('') }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Escape') { setShowReportModal(false); setReportReason('') } }} aria-label="Fechar">
+          <div className="bg-card rounded-lg shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900">Denunciar post</h3>
+              <button onClick={() => { setShowReportModal(false); setReportReason('') }} className="p-1 rounded hover:bg-gray-100 transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="Descreva o motivo da denúncia..."
+              maxLength={500}
+              className="w-full border border-gray-300 rounded-lg p-3 pb-8 text-sm outline-none resize-none focus:border-[#1877F2]"
+              rows={4}
+            />
+            <div className="text-xs text-gray-400 text-right -mt-6 pr-3 pointer-events-none">
+              {reportReason.length}/500
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => { setShowReportModal(false); setReportReason('') }}
+                className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => reportMutation.mutate(reportReason)}
+                disabled={!reportReason.trim() || reportMutation.isPending}
+                className="flex-1 bg-red-500 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors"
+              >
+                {reportMutation.isPending ? 'Enviando...' : 'Denunciar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   )
 }

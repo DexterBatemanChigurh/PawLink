@@ -101,6 +101,8 @@ export interface Post {
   pet?: Pet
   sharedPostId?: string
   sharedPost?: Post
+  commentCount?: number
+  sharesCount?: number
   createdAt: string
 }
 
@@ -120,7 +122,7 @@ export interface ReactionCounts {
 export interface Notification {
   id: string
   userId: string
-  type: 'follow' | 'reaction' | 'comment' | 'match_request' | 'match_accepted' | 'match_rejected' | 'match_adopted'
+  type: 'follow' | 'reaction' | 'comment' | 'match_request' | 'match_accepted' | 'match_rejected' | 'match_adopted' | 'report'
   message: string
   referenceId: string | null
   referenceType: string | null

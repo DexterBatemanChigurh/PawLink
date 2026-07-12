@@ -31,7 +31,7 @@ export function MyFavoritesPage() {
         empty={<EmptyState icon={Heart} title="Nenhum favorito" description="Você ainda não favoritou nenhum pet. Explore e favorite os que mais gostar!" action={{ label: 'Explorar pets', onClick: () => navigate('/explorar') }} />}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {pets.map((pet) => (
+          {pets?.map((pet) => (
             <button
               key={pet.id}
               onClick={() => navigate(`/pets/${pet.id}`)}

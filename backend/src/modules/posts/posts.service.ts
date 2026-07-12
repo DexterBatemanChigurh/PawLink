@@ -56,9 +56,9 @@ export class PostsService {
     return this.postsRepository.save(post);
   }
 
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(id: string, userId: string, userRole?: string): Promise<void> {
     const post = await this.findById(id);
-    if (post.authorId !== userId) {
+    if (post.authorId !== userId && userRole !== 'admin') {
       throw new ForbiddenException('Você não pode remover este post');
     }
     await this.postsRepository.remove(post);
@@ -107,6 +107,12 @@ export class PostsService {
     }
 
     const [posts, total] = await query
+      .addSelect(`(
+        SELECT COUNT(*) FROM comments WHERE comments."postId" = post.id
+      )`, 'post_commentCount')
+      .addSelect(`(
+        SELECT COUNT(*) FROM posts AS shares WHERE shares."sharedPostId" = post.id
+      )`, 'post_sharesCount')
       .orderBy('post.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
