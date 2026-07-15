@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Heart, MessageCircle, Share2, Megaphone, Calendar, Home, Stethoscope, MoreHorizontal, Pencil, Trash2, Bookmark, Globe, Flag, X, PawPrint } from 'lucide-react'
@@ -6,10 +6,12 @@ import api from '../../services/api'
 import { useAuthStore } from '../../store/auth.store'
 import { useConfirmStore } from '../../store/confirm.store'
 import { useToastStore } from '../../store/toast.store'
+import { useOnlineStore } from '../../store/online.store'
 import type { Post, ReactionCounts, ReactionType } from '../../types'
 import { ReactionsPopup, ReactionIcon } from './reactions-popup'
 import { CommentsSection } from './comments-section'
 import { ShareModal } from './share-modal'
+import { Lightbox } from '../ui/lightbox'
 import { Avatar } from '../ui/avatar'
 import { ROLE_BADGE } from '../../types/constants'
 import { CheckCircle } from 'lucide-react'
@@ -50,9 +52,14 @@ export function PostCard({ post }: PostCardProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [reportReason, setReportReason] = useState('')
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [sharedLightboxIndex, setSharedLightboxIndex] = useState<number | null>(null)
   const likeRef = useRef<HTMLButtonElement>(null)
   const isAuthor = user?.id === post.authorId
   const toast = useToastStore()
+  const onlineUsers = useOnlineStore((s) => s.onlineUsers)
+  const isAuthorOnline = !post.organization && onlineUsers.includes(post.authorId)
+  const [reacting, setReacting] = useState(false)
 
   const { data: reactions } = useQuery<ReactionCounts>({
     queryKey: ['reactions', post.id],
@@ -70,6 +77,15 @@ export function PostCard({ post }: PostCardProps) {
       queryClient.invalidateQueries({ queryKey: ['reactions', post.id] })
     },
   })
+
+  const handleReact = useCallback((type: ReactionType) => {
+    setReacting(true)
+    reactMutation.mutate(type, {
+      onSettled: () => {
+        setTimeout(() => setReacting(false), 400)
+      },
+    })
+  }, [reactMutation])
 
   const { data: isBookmarked } = useQuery<boolean>({
     queryKey: ['bookmark', post.id],
@@ -135,15 +151,17 @@ export function PostCard({ post }: PostCardProps) {
 
   return (
     <article className="bg-card rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      {/* Header - Facebook style */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-2">
         {post.organization ? (
           <button onClick={() => navigate(`/org/${post.organization.slug}`)} aria-label={`Ver perfil de ${post.organization.name}`} className="shrink-0">
             <Avatar src={post.organization.avatar} name={post.organization.name} size="md" />
           </button>
         ) : (
-          <button onClick={() => navigate(`/profile?id=${post.authorId}`)} aria-label={`Ver perfil de ${post.author.name}`} className="shrink-0">
+          <button onClick={() => navigate(`/profile?id=${post.authorId}`)} aria-label={`Ver perfil de ${post.author.name}`} className="shrink-0 relative">
             <Avatar src={post.author.avatar} name={post.author.name} size="md" />
+            {isAuthorOnline && (
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
+            )}
           </button>
         )}
         <div className="flex-1 min-w-0">
@@ -172,6 +190,11 @@ export function PostCard({ post }: PostCardProps) {
             {!post.organization && ROLE_BADGE[post.author.role] && (
               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${ROLE_BADGE[post.author.role].color} shrink-0`}>
                 {ROLE_BADGE[post.author.role].label}
+              </span>
+            )}
+            {post.sharedPost && (
+              <span className="text-xs text-gray-500 flex items-center gap-1">
+                <Share2 className="w-3 h-3" /> compartilhou
               </span>
             )}
             <span className={`ml-auto inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded ${cfg.color} shrink-0`}>
@@ -287,7 +310,7 @@ export function PostCard({ post }: PostCardProps) {
       {post.media && post.media.length > 0 && (
         <div className={`grid ${post.media.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-0.5 pt-1`}>
           {post.media.map((url, idx) => (
-            <div key={idx} className="bg-gray-100" style={{ aspectRatio: '16/9' }}>
+            <div key={idx} className="bg-gray-100 cursor-pointer" style={{ aspectRatio: '16/9' }} onClick={() => setLightboxIndex(idx)}>
               <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
             </div>
           ))}
@@ -327,8 +350,9 @@ export function PostCard({ post }: PostCardProps) {
                 post.sharedPost.author.name.charAt(0).toUpperCase()
               )}
             </div>
+            <span className="text-xs text-gray-500">Publicado por</span>
             <span className="text-xs font-semibold text-gray-900 truncate">{post.sharedPost.author.name}</span>
-            <span className="text-[10px] text-gray-400">
+            <span className="text-[10px] text-gray-400 ml-auto">
               {new Date(post.sharedPost.createdAt).toLocaleDateString('pt-BR')}
             </span>
           </div>
@@ -338,7 +362,7 @@ export function PostCard({ post }: PostCardProps) {
           {post.sharedPost.media && post.sharedPost.media.length > 0 && (
             <div className={`grid ${post.sharedPost.media.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-px`}>
               {post.sharedPost.media.map((url, idx) => (
-                <div key={idx} className="bg-gray-200" style={{ aspectRatio: '16/9' }}>
+                <div key={idx} className="bg-gray-200 cursor-pointer" style={{ aspectRatio: '16/9' }} onClick={() => setSharedLightboxIndex(idx)}>
                   <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
                 </div>
               ))}
@@ -366,21 +390,31 @@ export function PostCard({ post }: PostCardProps) {
 
       {/* Stats bar - display only, shows counts when > 0 */}
       <div className="flex items-center justify-between px-4 py-2 text-sm text-gray-500">
-        <div className="flex items-center gap-1.5">
-          {topReaction && totalReactions > 0 && (
-            <>
-              <ReactionIcon type={topReaction[0]} size={16} />
-              <span className="text-[15px]">{totalReactions}</span>
-            </>
+        <div className="flex items-center">
+          {totalReactions > 0 && (
+            <div className="flex items-center">
+              <div className="flex -space-x-1.5 mr-1.5">
+                {Object.entries(reactions?.counts ?? {})
+                  .filter(([, c]) => c > 0)
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 3)
+                  .map(([type]) => (
+                    <div key={type} className="relative">
+                      <ReactionIcon type={type} size={15} />
+                    </div>
+                  ))}
+              </div>
+              <span className="text-[15px] hover:underline cursor-pointer">{totalReactions}</span>
+            </div>
           )}
         </div>
         {(post.commentCount ?? 0) > 0 || (post.sharesCount ?? 0) > 0 ? (
           <div className="flex items-center gap-3 text-[15px]">
             {(post.commentCount ?? 0) > 0 && (
-              <span>{post.commentCount} comentário{(post.commentCount ?? 0) !== 1 ? 's' : ''}</span>
+              <span className="hover:underline cursor-pointer">{post.commentCount} comentário{(post.commentCount ?? 0) !== 1 ? 's' : ''}</span>
             )}
             {(post.sharesCount ?? 0) > 0 && (
-              <span>{post.sharesCount} compartilhamento{(post.sharesCount ?? 0) !== 1 ? 's' : ''}</span>
+              <span className="hover:underline cursor-pointer">{post.sharesCount} compartilhamento{(post.sharesCount ?? 0) !== 1 ? 's' : ''}</span>
             )}
           </div>
         ) : null}
@@ -397,9 +431,9 @@ export function PostCard({ post }: PostCardProps) {
             ref={likeRef}
             onClick={() => {
               if (userReaction) {
-                reactMutation.mutate(userReaction)
+                handleReact(userReaction)
               } else {
-                reactMutation.mutate('like')
+                handleReact('like')
               }
             }}
             className={`w-full flex items-center justify-center gap-1.5 py-2 rounded text-sm font-semibold transition-colors ${
@@ -408,12 +442,16 @@ export function PostCard({ post }: PostCardProps) {
                 : 'text-gray-500 hover:bg-gray-100'
             }`}
           >
-            {userReaction ? <ReactionIcon type={userReaction} size={20} /> : <Heart className="w-5 h-5" />}
+            {userReaction ? (
+              <ReactionIcon type={userReaction} size={20} />
+            ) : (
+              <Heart className={`w-5 h-5 transition-all ${reacting ? 'scale-125 text-primary fill-primary' : ''}`} />
+            )}
             <span>{userReaction ? reactionLabel(userReaction) : 'Curtir'}</span>
           </button>
           {showReactions && (
             <ReactionsPopup
-              onReact={(type) => reactMutation.mutate(type)}
+              onReact={(type) => handleReact(type)}
               onClose={() => setShowReactions(false)}
             />
           )}
@@ -480,6 +518,24 @@ export function PostCard({ post }: PostCardProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {lightboxIndex !== null && post.media && (
+        <Lightbox
+          images={post.media}
+          currentIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
+
+      {sharedLightboxIndex !== null && post.sharedPost?.media && (
+        <Lightbox
+          images={post.sharedPost.media}
+          currentIndex={sharedLightboxIndex}
+          onClose={() => setSharedLightboxIndex(null)}
+          onNavigate={setSharedLightboxIndex}
+        />
       )}
     </article>
   )

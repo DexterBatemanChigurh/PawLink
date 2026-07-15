@@ -7,11 +7,14 @@ import api from '../../services/api'
 import { getSocket } from '../../services/socket'
 import type { Conversation } from '../../types'
 import { Avatar } from '../ui/avatar'
+import { useOnlineStore } from '../../store/online.store'
 
 export function MessengerPopup() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
-  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
+  const onlineUsers = useOnlineStore((s) => s.onlineUsers)
+  const setOnline = useOnlineStore((s) => s.setOnline)
+  const setOffline = useOnlineStore((s) => s.setOffline)
   const ref = useRef<HTMLDivElement>(null)
 
   const { data: conversations, isLoading } = useQuery<Conversation[]>({
@@ -25,23 +28,15 @@ export function MessengerPopup() {
 
   useEffect(() => {
     const socket = getSocket()
-    const handleOnline = (payload: { userId: string }) => {
-      setOnlineUsers((prev) => new Set(prev).add(payload.userId))
-    }
-    const handleOffline = (payload: { userId: string }) => {
-      setOnlineUsers((prev) => {
-        const next = new Set(prev)
-        next.delete(payload.userId)
-        return next
-      })
-    }
+    const handleOnline = (payload: { userId: string }) => setOnline(payload.userId)
+    const handleOffline = (payload: { userId: string }) => setOffline(payload.userId)
     socket.on('user_online', handleOnline)
     socket.on('user_offline', handleOffline)
     return () => {
       socket.off('user_online', handleOnline)
       socket.off('user_offline', handleOffline)
     }
-  }, [])
+  }, [setOnline, setOffline])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -80,7 +75,7 @@ export function MessengerPopup() {
               </div>
             ) : (
               conversations.map((conv) => {
-                const isOnline = onlineUsers.has(conv.otherUserId)
+                const isOnline = onlineUsers.includes(conv.otherUserId)
                 return (
                   <button
                     key={conv.matchId}

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { TopBar } from './top-bar'
 import { LeftSidebar } from './left-sidebar'
-import { RightSidebar } from '../feed/right-sidebar'
+
 import { MessengerPopup } from './messenger-popup'
 import { useThemeStore } from '../../store/theme.store'
 
@@ -34,10 +34,9 @@ export function Layout() {
       <div className="pt-14 flex justify-center">
         <div className="flex w-full max-w-[1280px]">
           <LeftSidebar />
-          <main className="flex-1 min-h-[calc(100vh-56px)] py-4 px-4 max-w-[820px] mx-auto lg:mx-0">
+          <main className="flex-1 min-h-[calc(100vh-56px)] py-4 px-4">
             <Outlet />
           </main>
-          <RightSidebar />
         </div>
       </div>
 

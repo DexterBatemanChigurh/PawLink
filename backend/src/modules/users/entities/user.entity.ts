@@ -73,13 +73,19 @@ export class User {
   @Column({ nullable: true })
   address: string;
 
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ nullable: true })
+  state: string;
+
   @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
   latitude: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
   longitude: number;
 
-  @Column({ default: false })
+  @Column({ default: true })
   emailVerified: boolean;
 
   @Column({ default: 0 })

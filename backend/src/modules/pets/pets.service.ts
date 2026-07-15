@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, ILike, IsNull, Not } from 'typeorm';
+import { Repository, FindOptionsWhere, ILike, IsNull, Not, In } from 'typeorm';
 import { Pet, PetSpecies, PetSize } from './entities/pet.entity';
 import { CreatePetDto } from './dto/create-pet.dto';
+import { Match, MatchStatus } from '../matches/entities/match.entity';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { OrganizationsService } from '../organizations/organizations.service';
@@ -12,6 +13,8 @@ export class PetsService {
   constructor(
     @InjectRepository(Pet)
     private petsRepository: Repository<Pet>,
+    @InjectRepository(Match)
+    private matchesRepository: Repository<Match>,
     private usersService: UsersService,
     private orgService: OrganizationsService,
   ) {}
@@ -161,6 +164,32 @@ export class PetsService {
       where: { ownerId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findMyPets(userId: string): Promise<{ owned: Pet[]; adopted: Pet[] }> {
+    const owned = await this.petsRepository.find({
+      where: { ownerId: userId },
+      order: { createdAt: 'DESC' },
+    });
+
+    const adoptedMatches = await this.matchesRepository.find({
+      where: {
+        interestedUserId: userId,
+        status: MatchStatus.ADOPTED,
+      },
+    });
+
+    if (adoptedMatches.length === 0) {
+      return { owned, adopted: [] };
+    }
+
+    const adoptedPetIds = adoptedMatches.map((m) => m.petId);
+    const adopted = await this.petsRepository.find({
+      where: { id: In(adoptedPetIds) },
+      order: { createdAt: 'DESC' },
+    });
+
+    return { owned, adopted };
   }
 
   async findByOrganization(orgId: string): Promise<Pet[]> {

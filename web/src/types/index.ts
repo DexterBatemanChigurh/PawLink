@@ -26,11 +26,17 @@ export interface User {
   role: string
   status: string
   avatar?: string
+  coverPhoto?: string
   phone?: string
   bio?: string
   city?: string
   state?: string
   createdAt: string
+}
+
+export interface MyPetsResponse {
+  owned: Pet[]
+  adopted: Pet[]
 }
 
 export interface Pet {
@@ -78,6 +84,8 @@ export interface Message {
   senderId: string
   sender: User
   content: string
+  postId?: string
+  post?: Post
   readAt: string | null
   createdAt: string
 }

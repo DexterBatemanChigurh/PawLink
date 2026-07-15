@@ -75,7 +75,7 @@ export class MessagesGateway
   @SubscribeMessage('send_message')
   async handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { matchId: string; content: string },
+    @MessageBody() payload: { matchId: string; content: string; postId?: string },
   ) {
     try {
       if (!payload.matchId || !payload.content?.trim()) {

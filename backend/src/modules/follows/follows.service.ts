@@ -83,4 +83,22 @@ export class FollowsService {
     });
     return follows.map((f) => f.targetUserId);
   }
+
+  async getMutualFollowUserIds(userId: string, excludeIds: string[]): Promise<string[]> {
+    const myFollowedIds = await this.getFollowedUserIds(userId);
+
+    if (myFollowedIds.length === 0) return [];
+
+    const mutual = await this.followsRepository
+      .createQueryBuilder('f')
+      .select('f.targetUserId')
+      .where('f.followerId IN (:...myFollowedIds)', { myFollowedIds })
+      .andWhere('f.targetUserId NOT IN (:...excludeIds)', { excludeIds })
+      .groupBy('f.targetUserId')
+      .orderBy('COUNT(f.id)', 'DESC')
+      .limit(5)
+      .getRawMany();
+
+    return mutual.map((m: any) => m.f_targetUserId);
+  }
 }

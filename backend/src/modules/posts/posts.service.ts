@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Post, PostType } from './entities/post.entity';
@@ -26,10 +26,17 @@ export class PostsService {
       }
     }
 
+    if (!dto.type) {
+      throw new BadRequestException('Tipo do post é obrigatório');
+    }
+    if (dto.type === PostType.UPDATE && !dto.petId) {
+      throw new BadRequestException('Posts do tipo "update" precisam estar vinculados a um pet');
+    }
+
     const post = this.postsRepository.create();
     post.content = dto.content;
     post.authorId = authorId;
-    post.type = dto.type || PostType.UPDATE;
+    post.type = dto.type;
     if (dto.media) post.media = dto.media;
     if (dto.petId) post.petId = dto.petId;
     if (dto.organizationId) post.organizationId = dto.organizationId;
@@ -49,15 +56,18 @@ export class PostsService {
     return post;
   }
 
-  async findByUser(userId: string): Promise<Post[]> {
-    return this.postsRepository.find({
+  async findByUser(userId: string, page = 1, limit = 20): Promise<{ posts: Post[]; total: number }> {
+    const [posts, total] = await this.postsRepository.findAndCount({
       where: { authorId: userId, organizationId: IsNull() },
       relations: {
         organization: true,
         sharedPost: { author: true, pet: true, sharedPost: { author: true, pet: true } },
       },
       order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { posts, total };
   }
 
   async findByOrganization(orgId: string, page = 1, limit = 20): Promise<{ posts: Post[]; total: number }> {
@@ -94,6 +104,7 @@ export class PostsService {
   async share(postId: string, userId: string, content?: string): Promise<Post> {
     const original = await this.postsRepository.findOne({
       where: { id: postId },
+      relations: { pet: true },
     });
     if (!original) throw new NotFoundException('Post não encontrado');
 
@@ -102,8 +113,13 @@ export class PostsService {
       content: content || '',
       type: PostType.UPDATE,
       sharedPostId: postId,
+      petId: original.petId,
     });
-    return this.postsRepository.save(post);
+    const saved = await this.postsRepository.save(post);
+    if (content) {
+      await this.hashtagsService.extractAndSave(content, saved.id);
+    }
+    return saved;
   }
 
   async getFeed(userId: string, followedIds: string[], page = 1, limit = 10): Promise<{ posts: Post[]; total: number }> {

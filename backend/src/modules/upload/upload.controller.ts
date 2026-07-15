@@ -8,6 +8,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 
 const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -21,8 +22,10 @@ function imageFilter(_req: any, file: Express.Multer.File, cb: (error: Error | n
 }
 
 function createStorage(subfolder: string) {
+  const dest = join(__dirname, '..', '..', '..', 'uploads', subfolder);
+  if (!existsSync(dest)) mkdirSync(dest, { recursive: true });
   return diskStorage({
-    destination: join(__dirname, '..', '..', '..', 'uploads', subfolder),
+    destination: dest,
     filename: (_req, file, cb) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       cb(null, uniqueSuffix + extname(file.originalname));

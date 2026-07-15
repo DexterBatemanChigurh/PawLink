@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Heart, Syringe, Scissors, MessageCircle } from 'lucide-react'
+import { Heart, Syringe, Scissors, MessageCircle, Share2 } from 'lucide-react'
+import { useAuthStore } from '../../store/auth.store'
 import type { Pet } from '../../types'
 import { Avatar } from '../ui/avatar'
 import { SPECIES_EMOJI, SPECIES_LABEL } from '../../types/constants'
+import { PetShareModal } from '../pets/pet-share-modal'
 
 interface PetPostProps {
   pet: Pet
@@ -10,6 +13,9 @@ interface PetPostProps {
 
 export function PetPost({ pet }: PetPostProps) {
   const navigate = useNavigate()
+  const user = useAuthStore((s) => s.user)
+  const isOwner = user?.id === pet.ownerId
+  const [showShare, setShowShare] = useState(false)
 
   return (
     <article className="bg-card rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -76,23 +82,40 @@ export function PetPost({ pet }: PetPostProps) {
         )}
       </div>
 
-      {/* Actions — like Facebook */}
+      {/* Actions */}
       <div className="px-4 pb-3 flex gap-2">
         <button
-          onClick={() => navigate(`/pets/${pet.id}`)}
-          className="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors flex items-center justify-center gap-1.5"
+          onClick={() => setShowShare(true)}
+          className="bg-gray-100 text-gray-600 hover:bg-gray-200 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 px-3"
         >
-          <Heart className="w-4 h-4" />
-          Quero Adotar
+          <Share2 className="w-4 h-4" />
+          Compartilhar
         </button>
+        {!isOwner && pet.status === 'available' && (
+          <button
+            onClick={() => navigate(`/pets/${pet.id}`)}
+            className="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors flex items-center justify-center gap-1.5"
+          >
+            <Heart className="w-4 h-4" />
+            Quero Adotar
+          </button>
+        )}
         <button
           onClick={() => navigate(`/pets/${pet.id}`)}
-          className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center gap-1.5"
+          className={`flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center gap-1.5 ${isOwner || pet.status !== 'available' ? 'w-full' : ''}`}
         >
           <MessageCircle className="w-4 h-4" />
-          Saber Mais
+          {isOwner ? 'Ver detalhes' : 'Saber Mais'}
         </button>
       </div>
+
+      {showShare && (
+        <PetShareModal
+          pet={pet}
+          onClose={() => setShowShare(false)}
+          onShared={() => setShowShare(false)}
+        />
+      )}
     </article>
   )
 }

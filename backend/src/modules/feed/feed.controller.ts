@@ -31,6 +31,8 @@ export class FeedController {
   @ApiOperation({ summary: 'Sugestões de usuários para seguir' })
   async getSuggestions(@CurrentUser() user: User) {
     const followedIds = await this.followsService.getFollowedUserIds(user.id);
-    return this.usersService.getSuggestions(user.id, followedIds);
+    const excludeIds = [user.id, ...followedIds];
+    const mutualFollowIds = await this.followsService.getMutualFollowUserIds(user.id, excludeIds);
+    return this.usersService.getSuggestions(user.id, followedIds, mutualFollowIds, user.city ?? undefined, user.state ?? undefined);
   }
 }

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike, Not, In } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserRole, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -128,18 +128,51 @@ export class UsersService {
     };
   }
 
-  async getSuggestions(currentUserId: string, followedIds: string[]): Promise<User[]> {
-    const publicRoles = ['ong', 'veterinary', 'petshop', 'independent_rescuer'];
+  async getSuggestions(
+    currentUserId: string,
+    followedIds: string[],
+    mutualFollowIds: string[],
+    userCity?: string,
+    userState?: string,
+  ): Promise<User[]> {
+    const publicRoles = ['ong', 'veterinary', 'petshop', 'independent_rescuer', 'user'];
     const excludeIds = [currentUserId, ...followedIds];
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const mutualSet = new Set(mutualFollowIds);
 
-    return this.usersRepository.find({
-      where: {
-        id: Not(In(excludeIds)),
-        role: In(publicRoles),
-      },
-      order: { createdAt: 'DESC' },
-      take: 5,
+    const candidates = await this.usersRepository
+      .createQueryBuilder('u')
+      .leftJoin('follows', 'f', 'f.targetUserId = u.id')
+      .leftJoin('posts', 'p', 'p.authorId = u.id AND p.createdAt >= :weekAgo', { weekAgo })
+      .where('u.id NOT IN (:...excludeIds)', { excludeIds })
+      .andWhere('u.role IN (:...publicRoles)', { publicRoles })
+      .groupBy('u.id')
+      .addSelect('COUNT(DISTINCT f.id)', 'follower_count')
+      .addSelect('COUNT(DISTINCT p.id)', 'recent_post_count')
+      .getRawMany();
+
+    const scored = candidates.map((c: any) => {
+      let score = 0;
+      if (userCity && c.u_city === userCity) score += 40;
+      else if (userState && c.u_state === userState) score += 15;
+      if (mutualSet.has(c.u_id)) score += 30;
+      score += Math.min(Number(c.follower_count) || 0, 50);
+      score += Math.min(Number(c.recent_post_count) || 0, 20);
+      return { user: c, score };
     });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    const topIds = scored.slice(0, 5).map((s) => s.user.u_id);
+
+    if (topIds.length === 0) return [];
+
+    const ordered = await this.usersRepository
+      .createQueryBuilder('u')
+      .where('u.id IN (:...topIds)', { topIds })
+      .getMany();
+
+    return topIds.map((id) => ordered.find((u) => u.id === id)).filter(Boolean) as User[];
   }
 
   async updateStatus(id: string, status: UserStatus): Promise<User> {

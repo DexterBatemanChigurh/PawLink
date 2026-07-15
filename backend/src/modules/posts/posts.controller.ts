@@ -30,9 +30,13 @@ export class PostsController {
   }
 
   @Get('user/:userId')
-  @ApiOperation({ summary: 'Posts de um usuário' })
-  findByUser(@Param('userId', ParseUUIDPipe) userId: string) {
-    return this.postsService.findByUser(userId);
+  @ApiOperation({ summary: 'Posts de um usuário (paginado)' })
+  findByUser(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.postsService.findByUser(userId, Number(page) || 1, Number(limit) || 20);
   }
 
   @Public()

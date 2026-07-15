@@ -42,6 +42,7 @@ export class MessagesService {
       matchId: dto.matchId,
       senderId: userId,
       content: dto.content,
+      postId: dto.postId || null,
     });
     return this.messagesRepository.save(message);
   }
@@ -49,7 +50,7 @@ export class MessagesService {
   async findById(id: string): Promise<Message> {
     const message = await this.messagesRepository.findOne({
       where: { id },
-      relations: { sender: true },
+      relations: { sender: true, post: true },
     });
     if (!message) throw new NotFoundException('Mensagem não encontrada');
     return message;
@@ -111,7 +112,7 @@ export class MessagesService {
 
     return this.messagesRepository.find({
       where: { matchId },
-      relations: { sender: true },
+      relations: { sender: true, post: true },
       order: { createdAt: 'ASC' },
     });
   }

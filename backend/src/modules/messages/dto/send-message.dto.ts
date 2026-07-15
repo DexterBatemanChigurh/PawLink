@@ -1,4 +1,4 @@
-import { IsUUID, IsString, MaxLength } from 'class-validator';
+import { IsUUID, IsString, MaxLength, IsOptional } from 'class-validator';
 
 export class SendMessageDto {
   @IsUUID()
@@ -7,4 +7,8 @@ export class SendMessageDto {
   @IsString()
   @MaxLength(2000)
   content: string;
+
+  @IsOptional()
+  @IsUUID()
+  postId?: string;
 }

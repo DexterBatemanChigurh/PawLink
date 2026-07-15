@@ -8,7 +8,7 @@ import { useToastStore } from '../../store/toast.store'
 import type { Conversation, Message as MessageType, User, Match } from '../../types'
 import { Skeleton } from '../../components/ui/skeleton'
 import { Avatar } from '../../components/ui/avatar'
-import { MessageSquare, Send, Check, CheckCheck, Search, ArrowLeft } from 'lucide-react'
+import { MessageSquare, Send, Check, CheckCheck, Search, ArrowLeft, ExternalLink } from 'lucide-react'
 
 function formatConvTime(dateStr: string) {
   const d = new Date(dateStr)
@@ -408,14 +408,35 @@ function ChatPanel({ matchId }: ChatPanelProps) {
                         </p>
                       )}
                       <div
-                        className={`px-3 py-2 text-sm leading-relaxed break-words ${
-                          isMine
-                            ? 'bg-primary text-white rounded-2xl rounded-br-md'
-                            : 'bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md'
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
-                      </div>
+                          className={`px-3 py-2 text-sm leading-relaxed break-words ${
+                            isMine
+                              ? 'bg-primary text-white rounded-2xl rounded-br-md'
+                              : 'bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md'
+                          }`}
+                        >
+                          <p className="whitespace-pre-wrap">{msg.content}</p>
+                          {msg.post && (
+                            <a
+                              href={`/?post=${msg.post.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`mt-2 block rounded-lg border p-2 text-xs ${
+                                isMine
+                                  ? 'bg-white/10 border-white/20 text-white'
+                                  : 'bg-white border-gray-200 text-gray-700'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <Avatar src={msg.post.author?.avatar} name={msg.post.author?.name || ''} size="xs" />
+                                <span className="font-semibold truncate">{msg.post.author?.name}</span>
+                              </div>
+                              <p className="line-clamp-1">{msg.post.content}</p>
+                              <span className="flex items-center gap-1 mt-1 opacity-70">
+                                <ExternalLink className="w-3 h-3" /> Ver post
+                              </span>
+                            </a>
+                          )}
+                        </div>
                       <div
                         className={`flex items-center gap-1 mt-0.5 ${
                           isMine ? 'justify-end mr-1' : 'justify-start ml-1'

@@ -1,37 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
-import { useAuthStore } from '../../store/auth.store'
-import { useToastStore } from '../../store/toast.store'
-import type { Post, PostFeed, Organization } from '../../types'
+import type { Post, PostFeed } from '../../types'
 import { PostCard } from '../../components/posts/post-card'
+import { PostComposer } from '../../components/composer/post-composer'
 import { PostSkeleton } from '../../components/ui/skeleton'
 import { EmptyState } from '../../components/ui/empty-state'
-import { FileUpload } from '../../components/ui/file-upload'
-import { Avatar } from '../../components/ui/avatar'
-import { uploadFile } from '../../services/upload'
-import { Image, X, Building2 } from 'lucide-react'
+import { RightSidebar } from '../../components/feed/right-sidebar'
+import { Image } from 'lucide-react'
 
 export function FeedPage() {
-  const { user } = useAuthStore()
   const queryClient = useQueryClient()
-  const toast = useToastStore()
-  const [showCreate, setShowCreate] = useState(false)
-  const [content, setContent] = useState('')
-  const [postMedia, setPostMedia] = useState<File | null>(null)
-  const [postPreview, setPostPreview] = useState<string | null>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploading, setUploading] = useState(false)
-  const [postAsOrg, setPostAsOrg] = useState(false)
-
-  const { data: myOrg } = useQuery<Organization>({
-    queryKey: ['my-organization'],
-    queryFn: async () => {
-      const { data } = await api.get('/organizations/my')
-      return data
-    },
-  })
 
   const {
     data,
@@ -73,125 +52,51 @@ export function FeedPage() {
 
   const allPosts = data?.pages?.flatMap((p) => p.posts) ?? []
 
-  const handleFilesSelected = (files: File[]) => {
-    setPostMedia(files[0] || null)
-    if (files[0]) {
-      const reader = new FileReader()
-      reader.onload = () => setPostPreview(reader.result as string)
-      reader.readAsDataURL(files[0])
-    } else {
-      setPostPreview(null)
-    }
-  }
+  const [newPostsCount, setNewPostsCount] = useState(0)
+  const newestCreatedAtRef = useRef<string | null>(null)
 
-  const handleCreatePost = async () => {
-    if (!content.trim()) return
-    try {
-      setUploading(true)
-      let mediaUrl: string | undefined
-      if (postMedia) {
-        mediaUrl = await uploadFile(postMedia, '/upload', setUploadProgress)
-      }
-      const payload: Record<string, any> = { content: content.trim(), media: mediaUrl ? [mediaUrl] : undefined }
-      if (postAsOrg && myOrg?.status === 'approved') {
-        payload.organizationId = myOrg.id
-      }
-      await api.post('/posts', payload)
-      setContent('')
-      setShowCreate(false)
-      setPostMedia(null)
-      setPostPreview(null)
-      setPostAsOrg(false)
-      setUploadProgress(0)
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
-      toast.add('Post publicado com sucesso!', 'success')
-    } catch {
-      toast.add('Erro ao criar post', 'error')
-    } finally {
-      setUploading(false)
+  useEffect(() => {
+    if (allPosts.length > 0 && !newestCreatedAtRef.current) {
+      newestCreatedAtRef.current = allPosts[0].createdAt
     }
-  }
+  }, [allPosts])
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (!newestCreatedAtRef.current) return
+      try {
+        const { data: fresh } = await api.get('/feed', { params: { page: 1, limit: 1 } })
+        const freshPost = (fresh as PostFeed).posts?.[0]
+        if (freshPost && new Date(freshPost.createdAt) > new Date(newestCreatedAtRef.current)) {
+          const count = (fresh as PostFeed).total - allPosts.length
+          if (count > 0) {
+            setNewPostsCount(count)
+          }
+        }
+      } catch {}
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [allPosts.length])
 
   return (
-    <>
-      {/* Create Post Box */}
-      <div className="bg-card rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-        <div className="flex items-center gap-3">
-          <Avatar src={user?.avatar} name={user?.name || ''} size="md" />
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex-1 h-10 bg-gray-100 rounded-full text-left px-4 text-sm text-gray-500 hover:bg-gray-200 transition-colors"
-          >
-            No que você está pensando, {user?.name?.split(' ')[0]}?
-          </button>
-        </div>
-        {showCreate && (
-          <div className="mt-3 space-y-3">
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Compartilhe algo com a comunidade..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none resize-none"
-              rows={4}
-              maxLength={2000}
-              autoFocus
-            />
-            {postPreview && (
-              <div className="relative rounded-lg overflow-hidden">
-                <img loading="lazy" decoding="async" src={postPreview} alt="" className="w-full max-h-48 object-contain bg-gray-100" />
-                <button
-                  onClick={() => { setPostMedia(null); setPostPreview(null) }}
-                  aria-label="Remover imagem"
-                  className="absolute top-2 right-2 w-7 h-7 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-            {uploading && (
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-primary h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-            )}
-            <FileUpload onFilesSelected={handleFilesSelected} maxFiles={1} />
-            {myOrg?.status === 'approved' && (
-              <button
-                type="button"
-                onClick={() => setPostAsOrg(!postAsOrg)}
-                className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                  postAsOrg
-                    ? 'bg-purple-100 text-purple-700 border border-purple-200'
-                    : 'text-gray-500 hover:bg-gray-100 border border-transparent'
-                }`}
-              >
-                <Building2 className="w-4 h-4" />
-                {postAsOrg ? `Publicando como ${myOrg.name}` : 'Publicar como ONG'}
-              </button>
-            )}
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setShowCreate(false); setContent(''); setPostMedia(null); setPostPreview(null); setPostAsOrg(false) }}
-                  className="px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleCreatePost}
-                  disabled={!content.trim() || uploading}
-                  className="px-4 py-1.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
-                >
-                  {uploading ? `Enviando... ${uploadProgress}%` : 'Publicar'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+    <div className="flex gap-6">
+      <div className="flex-1 min-w-0 max-w-[540px]">
+        <PostComposer />
+
+      {/* New posts pill */}
+      {newPostsCount > 0 && (
+        <button
+          onClick={() => {
+            queryClient.invalidateQueries({ queryKey: ['feed'] })
+            setNewPostsCount(0)
+            newestCreatedAtRef.current = null
+          }}
+          className="w-full py-2 mb-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+        >
+          <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+          {newPostsCount} novo{newPostsCount !== 1 ? 's' : ''} post{newPostsCount !== 1 ? 's' : ''}
+        </button>
+      )}
 
       {/* Feed */}
       {isLoading ? (
@@ -226,6 +131,9 @@ export function FeedPage() {
           <p className="text-sm text-gray-400">Você já viu tudo por aqui 🐾</p>
         )}
       </div>
-    </>
+      </div>
+
+      <RightSidebar />
+    </div>
   )
 }

@@ -20,7 +20,10 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:admin": "ts-node src/database/seeds/seed-admin.ts",
     "seed:demo": "ts-node src/database/seeds/seed-demo.ts",
-    "seed:matches": "ts-node src/database/seeds/seed-matches.ts"
+    "seed:matches": "ts-node src/database/seeds/seed-matches.ts",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts"
   },
   "dependencies": {
     "@nestjs/bull": "^11.0.4",
@@ -42,6 +45,7 @@
     "cache-manager": "^7.2.9",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "nest-winston": "^1.10.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.22.0",
@@ -50,7 +54,8 @@
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3",
     "typeorm": "^1.0.0",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

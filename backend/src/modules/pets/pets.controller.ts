@@ -131,9 +131,9 @@ export class PetsController {
 
   @Get('my/me')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Listar meus pets' })
+  @ApiOperation({ summary: 'Listar meus pets (cadastrados e adotados)' })
   findMyPets(@CurrentUser() user: User) {
-    return this.petsService.findByOwner(user.id);
+    return this.petsService.findMyPets(user.id);
   }
 
   @Get('owner/:id')

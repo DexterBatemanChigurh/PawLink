@@ -37,4 +37,14 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(UserStatus)
   status?: UserStatus;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  state?: string;
 }

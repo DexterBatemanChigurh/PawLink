@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Match } from '../../matches/entities/match.entity';
 import { User } from '../../users/entities/user.entity';
+import { Post } from '../../posts/entities/post.entity';
 
 @Entity('messages')
 export class Message {
@@ -30,6 +31,13 @@ export class Message {
 
   @Column({ type: 'text' })
   content: string;
+
+  @Column({ nullable: true })
+  postId: string | null;
+
+  @ManyToOne(() => Post, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'postId' })
+  post: Post;
 
   @Column({ type: 'timestamp', nullable: true })
   readAt: Date | null;

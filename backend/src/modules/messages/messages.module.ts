@@ -6,12 +6,13 @@ import { MessagesController } from './messages.controller';
 import { MessagesService } from './messages.service';
 import { MessagesGateway } from './messages.gateway';
 import { Message } from './entities/message.entity';
+import { Post } from '../posts/entities/post.entity';
 import { MatchesModule } from '../matches/matches.module';
 import { PetsModule } from '../pets/pets.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Message]),
+    TypeOrmModule.forFeature([Message, Post]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

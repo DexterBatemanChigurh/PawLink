@@ -1,34 +1,42 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import api from '../../services/api'
 import { FileUpload } from '../../components/ui/file-upload'
 import { uploadMultiple } from '../../services/upload'
 import { useToastStore } from '../../store/toast.store'
+import { useAuthStore } from '../../store/auth.store'
 import type { Organization } from '../../types'
 import { Save, Building2 } from 'lucide-react'
+
+const schema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(100),
+  species: z.enum(['dog', 'cat', 'bird', 'rabbit', 'hamster', 'other']),
+  breed: z.string().optional(),
+  color: z.string().optional(),
+  size: z.enum(['small', 'medium', 'large', 'giant']),
+  age: z.coerce.number().min(0).max(50).optional(),
+  ageUnit: z.enum(['anos', 'months']),
+  castrated: z.boolean(),
+  vaccinated: z.boolean(),
+  temperament: z.string().max(200).optional(),
+  story: z.string().max(2000).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(2).optional(),
+})
+
+type FormData = z.infer<typeof schema>
 
 export function NewPetPage() {
   const navigate = useNavigate()
   const toast = useToastStore()
+  const user = useAuthStore((s) => s.user)
   const [photos, setPhotos] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [asOrg, setAsOrg] = useState(false)
-  const [form, setForm] = useState({
-    name: '',
-    species: 'dog',
-    breed: '',
-    color: '',
-    size: 'medium',
-    age: '',
-    ageUnit: 'anos',
-    castrated: false,
-    vaccinated: false,
-    temperament: '',
-    story: '',
-    city: '',
-    state: '',
-  })
 
   const { data: myOrg } = useQuery<Organization>({
     queryKey: ['my-organization'],
@@ -38,16 +46,33 @@ export function NewPetPage() {
     },
   })
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      species: 'dog',
+      size: 'medium',
+      ageUnit: 'anos',
+      castrated: false,
+      vaccinated: false,
+      city: user?.city || '',
+      state: user?.state || '',
+    },
+  })
+
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (data: FormData) => {
       setUploading(true)
       let photoUrls: string[] = []
       if (photos.length > 0) {
         photoUrls = await uploadMultiple(photos, '/upload')
       }
       const payload: Record<string, any> = {
-        ...form,
-        age: form.age ? Number(form.age) : undefined,
+        ...data,
+        age: data.age || undefined,
         photos: photoUrls,
       }
       if (asOrg && myOrg?.status === 'approved') {
@@ -57,6 +82,10 @@ export function NewPetPage() {
     },
     onSuccess: () => {
       navigate('/my-pets')
+      toast.add('Pet cadastrado com sucesso!', 'success')
+    },
+    onError: () => {
+      toast.add('Erro ao cadastrar pet', 'error')
     },
     onSettled: () => {
       setUploading(false)
@@ -83,7 +112,7 @@ export function NewPetPage() {
     <div className="max-w-lg mx-auto">
       <h1 className="text-xl font-bold text-gray-900 mb-4">Cadastrar Pet</h1>
 
-      <div className="bg-card rounded-lg shadow-sm border border-gray-200 p-5 space-y-4">
+      <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="bg-card rounded-lg shadow-sm border border-gray-200 p-5 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Fotos</label>
           <FileUpload onFilesSelected={setPhotos} maxFiles={10} />
@@ -92,21 +121,14 @@ export function NewPetPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2 sm:col-span-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
-              required
-            />
+            <input {...register('name')}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
+            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
           </div>
           <div className="col-span-2 sm:col-span-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">Espécie *</label>
-            <select
-              value={form.species}
-              onChange={(e) => setForm({ ...form, species: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-card"
-            >
+            <select {...register('species')}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-card">
               {speciesList.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
@@ -117,34 +139,23 @@ export function NewPetPage() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Raça</label>
-            <input
-              type="text"
-              value={form.breed}
-              onChange={(e) => setForm({ ...form, breed: e.target.value })}
+            <input {...register('breed')}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
-              placeholder="SRD"
-            />
+              placeholder="SRD" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Cor</label>
-            <input
-              type="text"
-              value={form.color}
-              onChange={(e) => setForm({ ...form, color: e.target.value })}
+            <input {...register('color')}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
-              placeholder="Caramelo"
-            />
+              placeholder="Caramelo" />
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Porte</label>
-            <select
-              value={form.size}
-              onChange={(e) => setForm({ ...form, size: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-card"
-            >
+            <select {...register('size')}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-card">
               {sizeList.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
@@ -152,21 +163,14 @@ export function NewPetPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Idade</label>
-            <input
-              type="number"
-              value={form.age}
-              onChange={(e) => setForm({ ...form, age: e.target.value })}
+            <input type="number" {...register('age')}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
-              min={0}
-            />
+              min={0} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Unidade</label>
-            <select
-              value={form.ageUnit}
-              onChange={(e) => setForm({ ...form, ageUnit: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-card"
-            >
+            <select {...register('ageUnit')}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-card">
               <option value="anos">Anos</option>
               <option value="months">Meses</option>
             </select>
@@ -176,65 +180,42 @@ export function NewPetPage() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
-            <input
-              type="text"
-              value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
-            />
+            <input {...register('city')}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <input
-              type="text"
-              value={form.state}
-              onChange={(e) => setForm({ ...form, state: e.target.value })}
+            <input {...register('state')}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
               maxLength={2}
-              placeholder="MG"
-            />
+              placeholder="MG" />
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Temperamento</label>
-          <input
-            type="text"
-            value={form.temperament}
-            onChange={(e) => setForm({ ...form, temperament: e.target.value })}
+          <input {...register('temperament')}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
-            placeholder="Brincalhão, carinhoso, dócil..."
-          />
+            placeholder="Brincalhão, carinhoso, dócil..." />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">História</label>
-          <textarea
-            value={form.story}
-            onChange={(e) => setForm({ ...form, story: e.target.value })}
+          <textarea {...register('story')}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
             rows={3}
-            placeholder="Conte a história do pet..."
-          />
+            placeholder="Conte a história do pet..." />
         </div>
 
         <div className="flex items-center gap-6">
           <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.castrated}
-              onChange={(e) => setForm({ ...form, castrated: e.target.checked })}
-              className="w-4 h-4 text-primary rounded border-gray-300"
-            />
+            <input type="checkbox" {...register('castrated')}
+              className="w-4 h-4 text-primary rounded border-gray-300" />
             <span className="text-sm text-gray-700">Castrado</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.vaccinated}
-              onChange={(e) => setForm({ ...form, vaccinated: e.target.checked })}
-              className="w-4 h-4 text-primary rounded border-gray-300"
-            />
+            <input type="checkbox" {...register('vaccinated')}
+              className="w-4 h-4 text-primary rounded border-gray-300" />
             <span className="text-sm text-gray-700">Vacinado</span>
           </label>
         </div>
@@ -261,14 +242,14 @@ export function NewPetPage() {
         )}
 
         <button
-          onClick={() => mutation.mutate()}
-          disabled={!form.name || mutation.isPending}
+          type="submit"
+          disabled={mutation.isPending}
           className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
         >
           <Save className="w-5 h-5" />
           {uploading || mutation.isPending ? 'Enviando fotos...' : 'Cadastrar Pet'}
         </button>
-      </div>
+      </form>
     </div>
   )
 }
